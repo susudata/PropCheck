@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PropCheck - Kokpit</title>
+    <meta name="description" content="Kokpit zarządcy nieruchomości - zarządzaj usterkami w jednym miejscu.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="#8B7355"/>
+                    <path d="M8 12L16 8L24 12V20L16 24L8 20V12Z" stroke="#FFFAF0" stroke-width="1.5" fill="none"/>
+                    <circle cx="16" cy="16" r="2" fill="#FFFAF0"/>
+                    <circle cx="12" cy="14" r="1.5" fill="#FFFAF0"/>
+                    <circle cx="20" cy="18" r="1.5" fill="#FFFAF0"/>
+                </svg>
+                <span>PropCheck</span>
+            </a>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-link active">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect x="2" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="11" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="2" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="11" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span>Przegląd</span>
+            </a>
+            <a href="#" class="sidebar-link" data-feature="properties">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M3 7L10 2L17 7V17H3V7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 17V11H12V17" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span>Nieruchomości</span>
+            </a>
+            <a href="#" class="sidebar-link" data-feature="issues">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span>Usterki</span>
+            </a>
+            <a href="#" class="sidebar-link" data-feature="reports">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 4H16V16H4V4Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M4 8H16M8 4V16" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span>Raporty</span>
+            </a>
+            <a href="#" class="sidebar-link" data-feature="settings">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 2V4M10 16V18M18 10H16M4 10H6M15.66 4.34L14.24 5.76M5.76 14.24L4.34 15.66M15.66 15.66L14.24 14.24M5.76 5.76L4.34 4.34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span>Ustawienia</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <span>JD</span>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">Jan Developer</span>
+                    <span class="user-plan">Plan Pro</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1 class="page-title">Przegląd</h1>
+                <p class="page-subtitle">Zarządzaj usterkami w swoich nieruchomościach</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" data-feature="add-property">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Dodaj nieruchomość
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-properties">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 9L12 3L21 9V20H3V9Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M9 20V14H15V20" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-value">5</span>
+                        <span class="stat-label">Nieruchomości</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-issues">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 7V12M12 17H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-value">12</span>
+                        <span class="stat-label">Usterki ogółem</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-progress">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-value">4</span>
+                        <span class="stat-label">W realizacji</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-resolved">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-value">8</span>
+                        <span class="stat-label">Rozwiązane</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Properties Grid -->
+        <section class="properties-section">
+            <div class="section-header">
+                <h2 class="section-title-sm">Twoje nieruchomości</h2>
+                <a href="#" class="section-link" data-feature="all-properties">Zobacz wszystkie</a>
+            </div>
+            <div class="properties-grid">
+                <!-- Property Card 1 -->
+                <div class="property-card" data-property="1">
+                    <div class="property-header">
+                        <div class="property-info">
+                            <h3 class="property-name">Apartament Słoneczna 15</h3>
+                            <p class="property-address">ul. Słoneczna 15, Warszawa</p>
+                        </div>
+                        <button class="property-menu-btn" aria-label="Opcje">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="5" r="1.5" fill="currentColor"/>
+                                <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+                                <circle cx="10" cy="15" r="1.5" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="property-preview">
+                        <svg viewBox="0 0 200 120" class="property-floorplan">
+                            <rect x="10" y="10" width="180" height="100" fill="#FAF7F2" stroke="#D4C4B0" stroke-width="1"/>
+                            <rect x="10" y="10" width="70" height="50" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <rect x="80" y="10" width="60" height="50" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <rect x="140" y="10" width="50" height="50" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <rect x="10" y="60" width="120" height="50" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <rect x="130" y="60" width="60" height="50" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <!-- Pins -->
+                            <circle cx="45" cy="35" r="5" fill="#C45C3E"/>
+                            <circle cx="110" cy="30" r="5" fill="#D4A24C"/>
+                            <circle cx="160" cy="65" r="5" fill="#7A9E7A"/>
+                            <circle cx="70" cy="85" r="5" fill="#C45C3E"/>
+                        </svg>
+                    </div>
+                    <div class="property-stats">
+                        <div class="property-stat">
+                            <span class="issue-count critical">2</span>
+                            <span class="issue-label">krytyczne</span>
+                        </div>
+                        <div class="property-stat">
+                            <span class="issue-count warning">1</span>
+                            <span class="issue-label">w realizacji</span>
+                        </div>
+                        <div class="property-stat">
+                            <span class="issue-count ok">1</span>
+                            <span class="issue-label">rozwiązane</span>
+                        </div>
+                    </div>
+                    <div class="property-actions">
+                        <button class="btn btn-sm btn-outline" data-feature="view-floorplan">Zobacz rzut</button>
+                        <button class="btn btn-sm btn-primary" data-feature="add-issue">Dodaj usterkę</button>
+                    </div>
+                </div>
+
+                <!-- Property Card 2 -->
+                <div class="property-card" data-property="2">
+                    <div class="property-header">
+                        <div class="property-info">
+                            <h3 class="property-name">Mieszkanie Kwiatowa 8</h3>
+                            <p class="property-address">ul. Kwiatowa 8, Kraków</p>
+                        </div>
+                        <button class="property-menu-btn" aria-label="Opcje">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="5" r="1.5" fill="currentColor"/>
+                                <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+                                <circle cx="10" cy="15" r="1.5" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="property-preview">
+                        <svg viewBox="0 0 200 120" class="property-floorplan">
+                            <rect x="10" y="10" width="180" height="100" fill="#FAF7F2" stroke="#D4C4B0" stroke-width="1"/>
+                            <rect x="10" y="10" width="90" height="60" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <rect x="100" y="10" width="90" height="60" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <rect x="10" y="70" width="180" height="40" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <circle cx="55" cy="40" r="5" fill="#7A9E7A"/>
+                            <circle cx="150" cy="45" r="5" fill="#D4A24C"/>
+                        </svg>
+                    </div>
+                    <div class="property-stats">
+                        <div class="property-stat">
+                            <span class="issue-count ok">0</span>
+                            <span class="issue-label">krytyczne</span>
+                        </div>
+                        <div class="property-stat">
+                            <span class="issue-count warning">1</span>
+                            <span class="issue-label">w realizacji</span>
+                        </div>
+                        <div class="property-stat">
+                            <span class="issue-count ok">1</span>
+                            <span class="issue-label">rozwiązane</span>
+                        </div>
+                    </div>
+                    <div class="property-actions">
+                        <button class="btn btn-sm btn-outline" data-feature="view-floorplan">Zobacz rzut</button>
+                        <button class="btn btn-sm btn-primary" data-feature="add-issue">Dodaj usterkę</button>
+                    </div>
+                </div>
+
+                <!-- Property Card 3 -->
+                <div class="property-card" data-property="3">
+                    <div class="property-header">
+                        <div class="property-info">
+                            <h3 class="property-name">Studio Różana 3</h3>
+                            <p class="property-address">ul. Różana 3, Gdańsk</p>
+                        </div>
+                        <button class="property-menu-btn" aria-label="Opcje">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="5" r="1.5" fill="currentColor"/>
+                                <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+                                <circle cx="10" cy="15" r="1.5" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="property-preview">
+                        <svg viewBox="0 0 200 120" class="property-floorplan">
+                            <rect x="10" y="10" width="180" height="100" fill="#FAF7F2" stroke="#D4C4B0" stroke-width="1"/>
+                            <rect x="10" y="10" width="180" height="45" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <rect x="10" y="55" width="85" height="55" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <rect x="95" y="55" width="95" height="55" fill="none" stroke="#D4C4B0" stroke-width="0.5"/>
+                            <circle cx="100" cy="30" r="5" fill="#7A9E7A"/>
+                            <circle cx="55" cy="80" r="5" fill="#7A9E7A"/>
+                            <circle cx="145" cy="82" r="5" fill="#7A9E7A"/>
+                        </svg>
+                    </div>
+                    <div class="property-stats">
+                        <div class="property-stat">
+                            <span class="issue-count ok">0</span>
+                            <span class="issue-label">krytyczne</span>
+                        </div>
+                        <div class="property-stat">
+                            <span class="issue-count ok">0</span>
+                            <span class="issue-label">w realizacji</span>
+                        </div>
+                        <div class="property-stat">
+                            <span class="issue-count ok">3</span>
+                            <span class="issue-label">rozwiązane</span>
+                        </div>
+                    </div>
+                    <div class="property-actions">
+                        <button class="btn btn-sm btn-outline" data-feature="view-floorplan">Zobacz rzut</button>
+                        <button class="btn btn-sm btn-primary" data-feature="add-issue">Dodaj usterkę</button>
+                    </div>
+                </div>
+
+                <!-- Add New Property Card -->
+                <div class="property-card property-card-add" data-feature="add-property">
+                    <div class="add-property-content">
+                        <div class="add-icon">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
+                                <path d="M16 10V22M10 16H22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <span class="add-text">Dodaj nową nieruchomość</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Issues -->
+        <section class="issues-section">
+            <div class="section-header">
+                <h2 class="section-title-sm">Ostatnie usterki</h2>
+                <a href="#" class="section-link" data-feature="all-issues">Zobacz wszystkie</a>
+            </div>
+            <div class="issues-list">
+                <div class="issue-item issue-critical">
+                    <div class="issue-status-indicator"></div>
+                    <div class="issue-content">
+                        <h4 class="issue-title">Cieknący kran w kuchni</h4>
+                        <p class="issue-property">Apartament Słoneczna 15</p>
+                    </div>
+                    <div class="issue-meta">
+                        <span class="issue-badge badge-critical">Krytyczne</span>
+                        <span class="issue-date">2 dni temu</span>
+                    </div>
+                    <button class="issue-actions-btn" data-feature="issue-details" aria-label="Szczegóły">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M8 4L12 10L8 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="issue-item issue-warning">
+                    <div class="issue-status-indicator"></div>
+                    <div class="issue-content">
+                        <h4 class="issue-title">Pęknięcie w ścianie salonu</h4>
+                        <p class="issue-property">Mieszkanie Kwiatowa 8</p>
+                    </div>
+                    <div class="issue-meta">
+                        <span class="issue-badge badge-warning">W realizacji</span>
+                        <span class="issue-date">5 dni temu</span>
+                    </div>
+                    <button class="issue-actions-btn" data-feature="issue-details" aria-label="Szczegóły">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M8 4L12 10L8 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="issue-item issue-resolved">
+                    <div class="issue-status-indicator"></div>
+                    <div class="issue-content">
+                        <h4 class="issue-title">Wymiana żarówki w przedpokoju</h4>
+                        <p class="issue-property">Studio Różana 3</p>
+                    </div>
+                    <div class="issue-meta">
+                        <span class="issue-badge badge-resolved">Rozwiązane</span>
+                        <span class="issue-date">1 tydzień temu</span>
+                    </div>
+                    <button class="issue-actions-btn" data-feature="issue-details" aria-label="Szczegóły">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M8 4L12 10L8 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="issue-item issue-critical">
+                    <div class="issue-status-indicator"></div>
+                    <div class="issue-content">
+                        <h4 class="issue-title">Niesprawny termostat</h4>
+                        <p class="issue-property">Apartament Słoneczna 15</p>
+                    </div>
+                    <div class="issue-meta">
+                        <span class="issue-badge badge-critical">Krytyczne</span>
+                        <span class="issue-date">3 dni temu</span>
+                    </div>
+                    <button class="issue-actions-btn" data-feature="issue-details" aria-label="Szczegóły">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M8 4L12 10L8 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Feature Not Available Toast -->
+    <div class="toast" id="featureToast">
+        <div class="toast-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <span class="toast-message">Ta funkcja jeszcze nie jest gotowa!</span>
+        <button class="toast-close" aria-label="Zamknij">&times;</button>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
