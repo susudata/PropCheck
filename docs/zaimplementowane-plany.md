@@ -80,3 +80,41 @@ Tworzenie planu wdrożenia **jednej małej funkcjonalności**, którą da się z
   - Użytkownik natychmiast widzi kontekst produktu i może wykonać pierwszy krok w kilka sekund, co wspiera założenie time-to-value < 5 minut.
 - Co odłożono świadomie (z uzasadnieniem MVP-first):
   - Odłożono routing, autoryzację, backend i zaawansowane moduły dashboardu; celem było minimalne, poprawne uruchomienie produktu i podstawowego flow bez over-engineeringu.
+
+## Plan 003: Dashboard - dodawanie i usuwanie nieruchomości
+
+### 1) Sekcja: Walidacja zakresu i kryterium sukcesu
+- [x] 1.1 Zdefiniuj jedną małą funkcjonalność (1 zdanie, bez zakresu pobocznego).
+  - Funkcjonalność: panel dashboard z możliwością dodawania i usuwania nieruchomości z localStorage.
+- [x] 1.2 Potwierdź, że wdrożenie mieści się w jednej sekcji pracy Agenta AI.
+  - Zakres obejmuje frontend (HTML/CSS/JS) bez backendu i migracji.
+- [x] 1.3 Zdefiniuj minimalne kryterium sukcesu (co użytkownik może zrobić po wdrożeniu).
+  - Użytkownik może dodać nieruchomość (nazwa + adres) i usunąć ją po potwierdzeniu.
+- [x] 1.4 **Manualny test sekcji:** przejdź ścieżkę użytkownika i potwierdź, że kryterium sukcesu jest mierzalne.
+  - Test: klik "Dodaj nieruchomość" → wypełnij formularz → dodana karta pojawia się na dashboardzie.
+
+### 2) Sekcja: Implementacja minimalna
+- [x] 2.1 Wprowadź minimalną zmianę w kodzie potrzebną do działania funkcjonalności.
+  - Dodano modal dodawania nieruchomości, modal potwierdzenia usunięcia, funkcje JS do zarządzania stanem.
+- [x] 2.2 Dodaj podstawową obsługę błędów i walidację danych wejściowych.
+  - Walidacja HTML required, escapeHtml przy wyświetlaniu danych użytkownika.
+- [x] 2.3 Upewnij się, że UI/UX nie wydłuża time-to-value.
+  - Jedno kliknięcie do dodania, formularz w modalu, natychmiastowa aktualizacja widoku.
+- [x] 2.4 **Manualny test sekcji:** wykonaj klik-po-kliku scenariusz użycia i scenariusz błędu.
+  - Dodawanie: OK | Usuwanie: OK | Pusty stan: OK | ESC zamyka modale: OK
+
+### 3) Sekcja: Weryfikacja techniczna końcowa
+- [x] 3.3 Sprawdź, czy aplikacja działa poprawnie po zmianie (smoke test).
+  - Brak błędów w konsoli, responsywność działania.
+- [x] 3.4 **Manualny test sekcji:** potwierdź działanie w krytycznym flow użytkownika.
+  - Dodanie nieruchomości → pojawia się na liście → usunięcie z potwierdzeniem działa.
+
+### Raport po wdrożeniu
+- Co zostało wdrożone (1–3 punkty):
+  1. Modal dodawania nieruchomości (nazwa + adres) z walidacją.
+  2. Modal potwierdzenia usuwania (dwuetapowe: ikona kosza → potwierdzenie → usunięcie).
+  3. Persystencja w localStorage, dynamiczne statystyki, puste stany UI.
+- Wpływ na użytkownika i time-to-value:
+  - Użytkownik może w kilka sekund dodać pierwszą nieruchomość i zobaczyć ją na dashboardzie.
+- Co odłożono świadomie (z uzasadnieniem MVP-first):
+  - Widok szczegółów nieruchomości, dodawanie usterek, rzuty pięter; celem MVP jest podstawowy CRUK nieruchomości bez rozbudowanych funkcji.
