@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body class="dashboard-body">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -86,8 +87,17 @@
         <!-- Header -->
         <header class="dashboard-header">
             <div class="header-left">
-                <h1 class="page-title">Przegląd</h1>
-                <p class="page-subtitle">Zarządzaj usterkami w swoich nieruchomościach</p>
+                <div class="header-title-wrapper">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Otwórz menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="page-title">Przegląd</h1>
+                        <p class="page-subtitle">Zarządzaj usterkami w swoich nieruchomościach</p>
+                    </div>
+                </div>
             </div>
             <div class="header-actions">
                 <button class="btn btn-secondary" id="addIssueBtn">

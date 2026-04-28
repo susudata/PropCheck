@@ -8,13 +8,39 @@ let itemToDelete = null;
 let deleteCallback = null;
 let currentPropertyId = null;
 
-// Skrypt jest ładowany na końcu body, więc DOM jest już gotowy
-initAddPropertyModal();
-initAddIssueModal();
-initPropertyIssuesModal();
-initDeleteModal();
-loadProperties();
-loadIssues();
+// Wait for DOM to be fully ready
+document.addEventListener('DOMContentLoaded', function() {
+    initAddPropertyModal();
+    initAddIssueModal();
+    initPropertyIssuesModal();
+    initDeleteModal();
+    loadProperties();
+    loadIssues();
+    
+    // Mobile menu initialization (simplified, inline)
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (menuBtn && sidebar && overlay) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    }
+});
 
 function initAddIssueModal() {
     const modal = document.getElementById('addIssueModal');

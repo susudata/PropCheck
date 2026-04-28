@@ -648,9 +648,7 @@
 }
 
 @media (max-width: 768px) {
-    .sidebar {
-        display: none;
-    }
+
     
     .main-content {
         margin-left: 0;
@@ -987,4 +985,118 @@
 .checkbox-label {
     font-size: 0.9375rem;
     color: var(--color-text);
+}
+
+/* --- Mobile Menu Styles --- */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--color-text);
+    cursor: pointer;
+    padding: var(--space-xs);
+    margin-right: var(--space-md);
+}
+
+.header-title-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Zaktualizowane zapytanie @media dla mniejszych ekranów */
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    .sidebar {
+        /* Zamiast display: none, wysuwamy menu poza ekran */
+        display: flex;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 100;
+        width: 260px; /* Przywracamy szerokość dla menu bocznego na mobile */
+    }
+    
+    /* Klasa otwierająca menu */
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    /* Przywracamy widoczność tekstów i detali usuniętych dla 1024px */
+    .sidebar-header .logo span,
+    .sidebar-link span,
+    .sidebar-footer .user-details {
+        display: inline-block;
+        display: flex; /* dla user-details */
+    }
+    
+    .sidebar-link {
+        justify-content: flex-start;
+        padding: var(--space-md) var(--space-lg);
+    }
+
+    .user-info {
+        justify-content: flex-start;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: var(--space-md);
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-md);
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .properties-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .issue-meta {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: var(--space-xs);
+    }
+    
+    .issue-item {
+        flex-wrap: wrap;
+    }
+    
+    .issue-content {
+        flex-basis: calc(100% - 24px);
+    }
 }
