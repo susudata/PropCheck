@@ -77,6 +77,66 @@
     --container-narrow: 800px;
 }
 
+/* ===================================
+   Theme: Dark (Czarny + beżowy)
+   =================================== */
+[data-theme="dark"] {
+    --color-primary: #A69076;
+    --color-primary-dark: #C9A96E;
+    --color-primary-light: #C9A96E;
+    --color-cream: #1E1C17;
+    --color-cream-dark: #2A2720;
+    --color-cream-light: #151310;
+    --color-accent: #C9A96E;
+    --color-accent-light: #3A3228;
+    --color-text: #F5EFE6;
+    --color-text-secondary: #C9B99A;
+    --color-text-muted: #8A7A66;
+    --color-text-light: #6A5A48;
+    --color-success: #7A9E7A;
+    --color-warning: #D4A24C;
+    --color-critical: #E06B50;
+    --color-bg: #151310;
+    --color-bg-alt: #1E1C17;
+    --color-bg-card: #222018;
+    --color-border: #3A3228;
+    --color-border-light: #2A2720;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* ===================================
+   Theme: Blue (Biały + niebieski)
+   =================================== */
+[data-theme="blue"] {
+    --color-primary: #2563EB;
+    --color-primary-dark: #1D4ED8;
+    --color-primary-light: #3B82F6;
+    --color-cream: #F0F4FF;
+    --color-cream-dark: #E0E9FF;
+    --color-cream-light: #FFFFFF;
+    --color-accent: #60A5FA;
+    --color-accent-light: #BFDBFE;
+    --color-text: #0F172A;
+    --color-text-secondary: #334155;
+    --color-text-muted: #64748B;
+    --color-text-light: #94A3B8;
+    --color-success: #059669;
+    --color-warning: #D97706;
+    --color-critical: #DC2626;
+    --color-bg: #FFFFFF;
+    --color-bg-alt: #F8FAFF;
+    --color-bg-card: #FFFFFF;
+    --color-border: #DBEAFE;
+    --color-border-light: #EFF6FF;
+    --shadow-sm: 0 1px 3px rgba(37, 99, 235, 0.06);
+    --shadow-md: 0 4px 12px rgba(37, 99, 235, 0.1);
+    --shadow-lg: 0 8px 30px rgba(37, 99, 235, 0.12);
+    --shadow-xl: 0 20px 50px rgba(37, 99, 235, 0.15);
+}
+
 /* Reset & Base */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -1137,6 +1197,10 @@ p {
         grid-template-columns: 1fr;
     }
 }
+
+
+
+
 
 /* Scroll animations */
 .animate-on-scroll {

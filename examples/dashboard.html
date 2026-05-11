@@ -11,6 +11,16 @@
     <link rel="stylesheet" href="dist/styles.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="dashboard.css">
+    <script>
+        (function() {
+            try {
+                var t = localStorage.getItem('propcheck_theme');
+                if (t && t !== 'default') {
+                    document.documentElement.setAttribute('data-theme', t);
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body class="dashboard-body">
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -39,28 +49,28 @@
                 </svg>
                 <span>Przegląd</span>
             </a>
-            <a href="#" class="sidebar-link" data-feature="properties">
+            <a href="#" class="sidebar-link">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path d="M3 7L10 2L17 7V17H3V7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M8 17V11H12V17" stroke="currentColor" stroke-width="1.5"/>
                 </svg>
                 <span>Nieruchomości</span>
             </a>
-            <a href="#" class="sidebar-link" data-feature="issues">
+            <a href="#" class="sidebar-link">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
                     <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
                 <span>Usterki</span>
             </a>
-            <a href="#" class="sidebar-link" data-feature="reports">
+            <a href="#" class="sidebar-link">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path d="M4 4H16V16H4V4Z" stroke="currentColor" stroke-width="1.5"/>
                     <path d="M4 8H16M8 4V16" stroke="currentColor" stroke-width="1.5"/>
                 </svg>
                 <span>Raporty</span>
             </a>
-            <a href="#" class="sidebar-link" data-feature="settings">
+            <a href="#" class="sidebar-link" data-open-settings>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.5"/>
                     <path d="M10 2V4M10 16V18M18 10H16M4 10H6M15.66 4.34L14.24 5.76M5.76 14.24L4.34 15.66M15.66 15.66L14.24 14.24M5.76 5.76L4.34 4.34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -106,7 +116,14 @@
                     </svg>
                     Zgłoś usterkę
                 </button>
-                <button class="btn btn-primary" data-feature="add-property">
+                <button class="btn btn-outline" id="openReportModalBtn" title="Pobierz raport PDF">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 2V13M10 13L6 9M10 13L14 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 15H17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    Raport PDF
+                </button>
+                <button class="btn btn-primary">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
@@ -115,104 +132,182 @@
             </div>
         </header>
 
-        <!-- Stats Cards -->
-        <section class="stats-section">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon stat-icon-properties">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M3 9L12 3L21 9V20H3V9Z" stroke="currentColor" stroke-width="2"/>
-                            <path d="M9 20V14H15V20" stroke="currentColor" stroke-width="2"/>
-                        </svg>
+        <!-- Overview Section - Dashboard główny -->
+        <section id="overviewSection">
+            <!-- Stats Cards -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon-properties">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 9L12 3L21 9V20H3V9Z" stroke="currentColor" stroke-width="2"/>
+                                <path d="M9 20V14H15V20" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="statProperties">0</span>
+                            <span class="stat-label">Nieruchomości</span>
+                        </div>
                     </div>
-                    <div class="stat-content">
-                        <span class="stat-value" id="statProperties">0</span>
-                        <span class="stat-label">Nieruchomości</span>
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon-issues">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                                <path d="M12 7V12M12 17H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="statIssues">0</span>
+                            <span class="stat-label">Usterki</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon stat-icon-issues">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-                            <path d="M12 7V12M12 17H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value" id="statIssues">0</span>
-                        <span class="stat-label">Usterki ogółem</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon stat-icon-progress">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value" id="statInProgress">0</span>
-                        <span class="stat-label">W realizacji</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon stat-icon-resolved">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value" id="statResolved">0</span>
-                        <span class="stat-label">Rozwiązane</span>
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon-resolved">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="statResolved">0</span>
+                            <span class="stat-label">Rozwiązane</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Properties Grid -->
-        <section class="properties-section">
-            <div class="section-header">
-                <h2 class="section-title-sm">Twoje nieruchomości</h2>
-            </div>
-            <div class="properties-grid" id="propertiesGrid">
-                <!-- Empty state -->
-                <div class="empty-state-card" id="emptyPropertiesState">
-                    <div class="empty-state-icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <path d="M6 18L24 6L42 18V42H6V18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M18 42V28H30V42" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                    </div>
-                    <h3 class="empty-state-title">Brak nieruchomości</h3>
-                    <p class="empty-state-text">Dodaj swoją pierwszą nieruchomość, aby zacząć śledzić usterki.</p>
-                    <button class="btn btn-primary" id="emptyAddPropertyBtn">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <!-- Properties Grid -->
+            <section class="properties-section">
+                <div class="section-header">
+                    <h2 class="section-title-sm">Twoje nieruchomości</h2>
+                    <button class="section-action-btn" id="sectionAddPropertyBtn" aria-label="Dodaj nieruchomość">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                             <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
-                        Dodaj nieruchomość
+                        Dodaj
                     </button>
                 </div>
+                <div class="properties-grid" id="propertiesGrid">
+                    <!-- Empty state -->
+                    <div class="empty-state-card" id="emptyPropertiesState">
+                        <div class="empty-state-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                <path d="M6 18L24 6L42 18V42H6V18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M18 42V28H30V42" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <h3 class="empty-state-title">Brak nieruchomości</h3>
+                        <p class="empty-state-text">Dodaj swoją pierwszą nieruchomość, aby zacząć śledzić usterki.</p>
+                        <button class="btn btn-primary" id="emptyAddPropertyBtn">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            Dodaj nieruchomość
+                        </button>
+                    </div>
 
-                <!-- Property cards will be added here dynamically -->
-            </div>
+                    <!-- Property cards will be added here dynamically -->
+                </div>
+            </section>
+
+            <!-- Empty State - Issues -->
+            <section class="issues-section">
+                <div class="section-header">
+                    <h2 class="section-title-sm">Ostatnie usterki</h2>
+                    <button class="section-action-btn" id="sectionAddIssueBtn" aria-label="Zgłoś usterkę">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Zgłoś
+                    </button>
+                </div>
+                <div class="issues-list" id="issuesList">
+                    <div class="empty-state" id="emptyIssuesState">
+                        <div class="empty-state-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
+                                <path d="M24 16V26M24 32H24.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h3 class="empty-state-title">Brak usterek</h3>
+                        <p class="empty-state-text">Dodaj nieruchomość, a następnie zgłaszaj usterki, aby śledzić ich status.</p>
+                    </div>
+                </div>
+            </section>
         </section>
 
-        <!-- Empty State - Issues -->
-        <section class="issues-section">
-            <div class="section-header">
-                <h2 class="section-title-sm">Ostatnie usterki</h2>
-            </div>
-            <div class="issues-list" id="issuesList">
-                <div class="empty-state" id="emptyIssuesState">
-                    <div class="empty-state-icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
-                            <path d="M24 16V26M24 32H24.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <!-- Issues Page Section -->
+        <section id="issuesPageSection" class="issues-page-section" style="display: none;">
+            
+            <!-- Header -->
+            <header class="issues-page-header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" id="issuesPageMenuBtn" aria-label="Otwórz menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
+                    </button>
+                    <h1 class="page-title">Usterki</h1>
+                </div>
+            </header>
+
+            <!-- Controls: Sorting + Filtering -->
+            <div class="issues-page-controls">
+                <!-- Sortowanie -->
+                <div class="control-group">
+                    <label for="issuesSortDropdown" class="control-label">Sortuj:</label>
+                    <select id="issuesSortDropdown" class="form-input form-select">
+                        <option value="date-desc">Najnowsze pierwsze</option>
+                        <option value="date-asc">Najstarsze pierwsze</option>
+                        <option value="name-asc">Alfabetycznie (A–Z)</option>
+                        <option value="name-desc">Alfabetycznie (Z–A)</option>
+                        <option value="status">Według statusu</option>
+                    </select>
+                </div>
+
+                <!-- Filtrowanie statusów -->
+                <div class="control-group">
+                    <div class="filter-label">Pokaż:</div>
+                    <div class="filter-checkboxes">
+                        <label class="form-checkbox">
+                            <input type="checkbox" class="status-filter" value="critical" checked>
+                            <span class="checkbox-mark"></span>
+                            <span class="checkbox-label">Krytyczne</span>
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" class="status-filter" value="inProgress" checked>
+                            <span class="checkbox-mark"></span>
+                            <span class="checkbox-label">W trakcie</span>
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" class="status-filter" value="resolved" checked>
+                            <span class="checkbox-mark"></span>
+                            <span class="checkbox-label">Rozwiązane</span>
+                        </label>
                     </div>
-                    <h3 class="empty-state-title">Brak usterek</h3>
-                    <p class="empty-state-text">Dodaj nieruchomość, a następnie zgłaszaj usterki, aby śledzić ich status.</p>
+                </div>
+
+                <!-- Licznik usterek -->
+                <div class="control-group">
+                    <span class="issues-count">Razem: <strong id="issuesCountTotal">0</strong></span>
                 </div>
             </div>
+
+            <!-- Lista usterek (grouped by property) -->
+            <div class="issues-list-grouped" id="issuesListGrouped">
+                <!-- Renderuje się dynamicznie -->
+            </div>
+
+            <!-- Empty state -->
+            <div class="empty-state" id="issuesPageEmpty" style="display: none;">
+                <div class="empty-state-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
+                        <path d="M24 16V26M24 32H24.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3 class="empty-state-title">Brak usterek do wyświetlenia</h3>
+            </div>
+
         </section>
     </main>
 
@@ -235,6 +330,28 @@
                 <div class="form-group">
                     <label for="propertyAddress" class="form-label">Adres</label>
                     <input type="text" id="propertyAddress" name="propertyAddress" class="form-input" placeholder="np. ul. Słoneczna 15, Warszawa" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Plan mieszkania (opcjonalnie)</label>
+                    <div class="floorplan-upload-container" id="floorplanUploadContainer">
+                        <div class="floorplan-preview-wrapper" id="floorplanPreviewWrapper" style="display: none;">
+                            <img id="floorplanPreviewImg" src="" alt="Plan mieszkania" class="floorplan-preview-img">
+                            <button type="button" class="floorplan-remove-btn" id="floorplanRemoveBtn" title="Usuń zdjęcie planu">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M4 4L12 12M4 12L12 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <button type="button" class="floorplan-add-btn" id="floorplanAddBtn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M3 15L8 10L12 14L15 11L21 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="8.5" cy="7.5" r="1.5" fill="currentColor"/>
+                            </svg>
+                            <span>Dodaj plan mieszkania</span>
+                        </button>
+                    </div>
+                    <input type="file" id="floorplanInput" accept="image/*" style="display: none;">
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" id="cancelAddProperty">Anuluj</button>
@@ -268,7 +385,10 @@
                 </div>
                 <div class="form-group">
                     <label for="issueLocation" class="form-label">Lokalizacja</label>
-                    <input type="text" id="issueLocation" name="issueLocation" class="form-input" placeholder="np. Kuchnia, Łazienka, Salon" required>
+                    <div style="display: flex; gap: var(--space-xs); align-items: center;">
+                        <input type="text" id="issueLocation" name="issueLocation" class="form-input" placeholder="np. Kuchnia, Łazienka, Salon" required style="flex: 1;">
+                        <button type="button" class="btn btn-outline" id="submitAndPlaceIssueBtn" style="display: none; white-space: nowrap; flex-shrink: 0; height: 100%; padding: var(--space-sm) var(--space-md);" title="Zapisz usterkę i umieść pinezkę na mapie">Umieść pinezkę</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="issueDescription" class="form-label">Opis</label>
@@ -281,21 +401,24 @@
                         <span class="checkbox-label">Usterka krytyczna</span>
                     </label>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Zdjęcie usterki</label>
-                    <div class="photo-upload-placeholder" id="photoUploadPlaceholder">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                            <rect x="4" y="6" width="24" height="20" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                            <circle cx="11" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M4 22L10 16L16 22L22 16L28 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span class="photo-upload-text">Kliknij, aby dodać zdjęcie</span>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" id="cancelAddIssue">Anuluj</button>
-                    <button type="submit" class="btn btn-primary">Dodaj usterkę</button>
-                </div>
+                 <div class="form-group">
+                     <label class="form-label">Zdjęcia usterki (maks. 10)</label>
+                     <div class="photo-upload-container">
+                         <div class="photo-previews-grid" id="photoPreviewsGrid"></div>
+                         <button type="button" class="photo-add-btn" id="photoAddBtn" title="Dodaj kolejne zdjęcie">
+                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                 <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                             </svg>
+                         </button>
+                         <div class="photo-counter" id="photoCounter">0/10</div>
+                     </div>
+                     <input type="file" id="photoInput" accept="image/*" capture="environment" multiple style="display: none;">
+                 </div>
+                    <div class="modal-actions">
+                       <button type="button" class="btn btn-outline" id="cancelAddIssue">Anuluj</button>
+                       <button type="button" class="btn btn-outline" id="toggleResolvedBtn" style="display: none;">Oznacz jako rozwiązane</button>
+                       <button type="submit" class="btn btn-primary" id="submitIssueBtn">Dodaj usterkę</button>
+                   </div>
             </form>
         </div>
     </div>
@@ -354,7 +477,285 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Image Viewer Modal (Lightbox) -->
+    <div class="image-viewer-overlay" id="imageViewerOverlay">
+        <button class="image-viewer-close" id="imageViewerClose" aria-label="Zamknij">&times;</button>
+        <div class="image-viewer-content">
+            <img src="" alt="Zdjęcie usterki" class="image-viewer-img" id="imageViewerImg">
+        </div>
+    </div>
+
+    <!-- PDF Report Modal -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h2 class="modal-title">Pobierz raport PDF</h2>
+                <button class="modal-close" id="closeReportModal" aria-label="Zamknij" type="button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; color: var(--text-secondary, #6B7280); font-size: 14px;">Wybierz, które nieruchomości uwzględnić w raporcie:</p>
+                <div id="reportPropertyList" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; margin-bottom: 4px;">
+                    <!-- checkboxes rendered dynamically -->
+                </div>
+                <label class="form-checkbox" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, #E5E7EB);">
+                    <input type="checkbox" id="reportSelectAll">
+                    <span class="checkbox-mark"></span>
+                    <span class="checkbox-label" style="font-weight: 500;">Zaznacz wszystkie</span>
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" id="cancelReport">Anuluj</button>
+                <button type="button" class="btn btn-primary" id="confirmReport">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="margin-right: 6px;">
+                        <path d="M9 2V12M9 12L5 8M9 12L13 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 14H16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    Generuj PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Toast -->
+    <div id="pdfToast" style="
+        position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+        background: #1C1C1E; color: #fff; padding: 12px 20px;
+        border-radius: 10px; font-size: 14px; font-family: inherit;
+        display: none; align-items: center; gap: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25); max-width: 340px;
+    ">
+        <svg id="pdfToastIcon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M16 6L8 14L4 10" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="pdfToastMsg">Raport PDF zapisany!</span>
+    </div>
+
+    <!-- Bottom Navigation (mobile only) -->
+    <nav class="bottom-nav" id="bottomNav" aria-label="Nawigacja główna">
+        <a href="#" class="bottom-nav-item active" data-section="overview">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                <rect x="2" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="11" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="2" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="11" y="11" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <span>Przegląd</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-section="properties">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                <path d="M3 7L10 2L17 7V17H3V7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 17V11H12V17" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <span>Lokale</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-section="issues">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>Usterki</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-section="reports">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2V13M10 13L6 9M10 13L14 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 15H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>Raport</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-section="settings">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M10 2V4M10 16V18M18 10H16M4 10H6M15.66 4.34L14.24 5.76M5.76 14.24L4.34 15.66M15.66 15.66L14.24 14.24M5.76 5.76L4.34 4.34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>Więcej</span>
+        </a>
+    </nav>
+
+    <!-- Speed-dial FAB (mobile only) -->
+    <div class="fab-container">
+        <!-- Backdrop to close speed-dial on outside tap -->
+        <div class="fab-backdrop" id="fabBackdrop"></div>
+
+        <!-- Speed-dial action items (appear above FAB) -->
+        <div class="fab-actions" id="fabActions">
+            <div class="fab-action-item">
+                <span class="fab-action-label">Zgłoś usterkę</span>
+                <button class="fab-action-btn fab-action-btn-secondary" id="fabAddIssue" aria-label="Zgłoś usterkę">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="fab-action-item">
+                <span class="fab-action-label">Dodaj nieruchomość</span>
+                <button class="fab-action-btn fab-action-btn-primary" id="fabAddProperty" aria-label="Dodaj nieruchomość">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 7L10 2L17 7V17H3V7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 17V11H12V17" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main FAB toggle button -->
+        <button class="fab" id="fabToggle" aria-label="Akcje" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Floorplan Map Modal -->
+    <div class="modal-overlay" id="floorplanMapModal">
+        <div class="modal modal-xl">
+            <div class="modal-header">
+                <h2 class="modal-title" id="floorplanMapTitle">Mapa usterek</h2>
+                <button class="modal-close" id="closeFloorplanMapModal" aria-label="Zamknij" type="button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="floorplan-map-wrapper" id="floorplanMapWrapper">
+                <!-- Pasek rezerwowy z nieumieszczonymi usterkami -->
+                <div class="map-reserve-sidebar" id="mapReserveSidebar">
+                    <div class="map-reserve-header">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                            <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <span>Nieumieszczone</span>
+                        <span class="map-reserve-count" id="mapReserveCount">0</span>
+                    </div>
+                    <div class="map-reserve-list" id="mapReserveList">
+                        <!-- Reserve pins will be rendered here -->
+                    </div>
+                </div>
+
+                <div class="floorplan-map-container" id="floorplanMapContainer">
+                    <img src="" alt="Plan mieszkania" class="floorplan-map-img" id="floorplanMapImg">
+                    <!-- pins injected here -->
+                    <div class="pin-tooltip" id="pinTooltip">
+                         <span class="pin-tooltip-dot" id="pinTooltipDot"></span>
+                         <div class="pin-tooltip-content">
+                             <div class="pin-tooltip-name" id="pinTooltipName"></div>
+                             <div class="pin-tooltip-status" id="pinTooltipStatus"></div>
+                         </div>
+                     </div>
+                    <div class="map-pin-hint" id="mapPinHint">Kliknij na planie, aby umieścić pinezkę</div>
+                </div>
+                <div class="map-no-image" id="mapNoImage" style="display: none;">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <rect x="4" y="4" width="40" height="40" rx="4" stroke="currentColor" stroke-width="2"/>
+                        <path d="M4 34L14 22L20 30L28 18L44 34" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <p>Nie udało się załadować planu</p>
+                </div>
+            </div>
+            <div class="map-modal-footer">
+                <label class="map-mode-toggle" title="Tryb edycji: przeciągaj pinezki i klikaj aby dodać. Tryb widoku: kliknij pinezkę by zobaczyć szczegóły.">
+                    <span class="map-mode-switch">
+                        <input type="checkbox" id="mapModeToggle" checked>
+                        <span class="map-mode-switch-track"></span>
+                    </span>
+                    <span class="map-mode-label" id="mapModeLabel">Tryb edycji</span>
+                </label>
+                <button type="button" class="btn btn-primary" id="closeFloorplanMapBtn">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h2 class="modal-title">Ustawienia</h2>
+                <button class="modal-close" id="closeSettingsModal" aria-label="Zamknij" type="button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Appearance section -->
+            <div class="settings-section">
+                <div class="settings-section-title">Wygląd</div>
+                <div class="settings-label">Motyw</div>
+                <div class="theme-grid">
+                    <button type="button" class="theme-card active" data-theme="default">
+                        <div class="theme-preview">
+                            <span style="background:#FAF7F2;"></span>
+                            <span style="background:#8B7355;"></span>
+                            <span style="background:#C9A96E;"></span>
+                        </div>
+                        <span class="theme-label">Domyślny</span>
+                    </button>
+                    <button type="button" class="theme-card" data-theme="dark">
+                        <div class="theme-preview">
+                            <span style="background:#151310;"></span>
+                            <span style="background:#A69076;"></span>
+                            <span style="background:#C9A96E;"></span>
+                        </div>
+                        <span class="theme-label">Ciemny</span>
+                    </button>
+                    <button type="button" class="theme-card" data-theme="blue">
+                        <div class="theme-preview">
+                            <span style="background:#FFFFFF;"></span>
+                            <span style="background:#2563EB;"></span>
+                            <span style="background:#60A5FA;"></span>
+                        </div>
+                        <span class="theme-label">Niebieski</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Developer tools section -->
+            <div class="settings-dev-section">
+                <div class="settings-section-title">Opcje deweloperskie</div>
+                <div class="settings-dev-buttons">
+                    <button type="button" class="btn btn-outline btn-block" id="devPopulateBtn">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="flex-shrink:0">
+                            <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Generuj dane demo
+                    </button>
+                    <button type="button" class="btn btn-outline btn-block" id="devExportBtn">
+                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="flex-shrink:0">
+                             <path d="M10 13V3M6 7l4-4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                             <path d="M4 15v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                         </svg>
+                         Eksportuj dane
+                     </button>
+                     <label class="btn btn-outline btn-block" id="devImportLabel" style="cursor:pointer; margin:0;">
+                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="flex-shrink:0">
+                             <path d="M10 3v10M6 9l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                             <path d="M4 15v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                         </svg>
+                         Importuj dane
+                         <input type="file" id="devImportInput" accept=".json" style="display:none">
+                     </label>
+                    <button type="button" class="btn btn-danger btn-block" id="devPurgeBtn">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="flex-shrink:0">
+                            <path d="M6 7V15H14V7M4 7H16M8 7V5H12V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Wyczyść wszystkie dane
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" id="closeSettingsBtn">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.js"></script>
+    <script src="fonts.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

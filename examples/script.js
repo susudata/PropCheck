@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function initNavigation() {
     const nav = document.querySelector('.nav');
+    if (!nav) return;
     let lastScroll = 0;
     
     window.addEventListener('scroll', () => {
