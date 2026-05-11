@@ -648,28 +648,36 @@ function initAddPropertyModal() {
         if (floorplanInput) floorplanInput.value = '';
     }
 
-    if (floorplanInput) {
-        floorplanInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (!file.type.startsWith('image/')) {
-                alert('Proszę wybrać plik obrazu (JPG, PNG, itp.)');
-                floorplanInput.value = '';
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) {
-                alert('Zdjęcie nie może być większe niż 5MB');
-                floorplanInput.value = '';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                setFloorplanPreview(ev.target.result);
-                floorplanInput.value = '';
-            };
-            reader.readAsDataURL(file);
-        });
-    }
+     if (floorplanInput) {
+         floorplanInput.addEventListener('change', async function(e) {
+             const file = e.target.files[0];
+             if (!file) return;
+             if (!file.type.startsWith('image/')) {
+                 alert('Proszę wybrać plik obrazu (JPG, PNG, itp.)');
+                 floorplanInput.value = '';
+                 return;
+             }
+             if (file.size > 5 * 1024 * 1024) {
+                 alert('Zdjęcie nie może być większe niż 5MB');
+                 floorplanInput.value = '';
+                 return;
+             }
+             
+             // Compress floorplan image before preview
+             try {
+                 const compressedBase64 = await compressImageToBase64(file, 1200, 1200, 0.7);
+                 if (compressedBase64) {
+                     setFloorplanPreview(compressedBase64);
+                 } else {
+                     alert('Błąd przy kompresji zdjęcia');
+                 }
+             } catch (err) {
+                 console.error('Error compressing floorplan:', err);
+                 alert('Błąd przy przetwarzaniu zdjęcia');
+             }
+             floorplanInput.value = '';
+         });
+     }
 
     if (floorplanAddBtn) {
         floorplanAddBtn.addEventListener('click', () => {
@@ -2774,42 +2782,61 @@ function initSettingsModal() {
  * @returns {Promise<string|null>} Data URI or null
  */
 function imageUrlToDataUri(url) {
-    return new Promise((resolve) => {
-        console.log(`[Demo] Loading ${url}...`);
-        
-        const img = new Image();
-        
-        // Timeout after 5 seconds
-        const timeoutId = setTimeout(() => {
-            console.error(`[Demo] Timeout loading ${url}`);
-            img.onload = null;
-            img.onerror = null;
-            resolve(null);
-        }, 5000);
-        
-        img.onload = function() {
-            clearTimeout(timeoutId);
-            console.log(`[Demo] Image loaded: ${url} (${img.width}x${img.height})`);
-            
-            try {
-                // Create canvas and draw image
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    console.error(`[Demo] Failed to get canvas context for ${url}`);
-                    resolve(null);
-                    return;
-                }
-                
-                ctx.drawImage(img, 0, 0);
-                
-                // Convert to data URI (same format as manual upload)
-                const dataUri = canvas.toDataURL('image/png');
-                console.log(`[Demo] Converted ${url} to data URI (${Math.round(dataUri.length/1024)}KB)`);
-                resolve(dataUri);
+     return new Promise((resolve) => {
+         console.log(`[Demo] Loading ${url}...`);
+         
+         const img = new Image();
+         
+         // Timeout after 5 seconds
+         const timeoutId = setTimeout(() => {
+             console.error(`[Demo] Timeout loading ${url}`);
+             img.onload = null;
+             img.onerror = null;
+             resolve(null);
+         }, 5000);
+         
+         img.onload = function() {
+             clearTimeout(timeoutId);
+             console.log(`[Demo] Image loaded: ${url} (${img.width}x${img.height})`);
+             
+             try {
+                 // Create canvas with compression (similar to compressImageToBase64)
+                 const canvas = document.createElement('canvas');
+                 let width = img.width;
+                 let height = img.height;
+                 const maxWidth = 1200;
+                 const maxHeight = 1200;
+                 
+                 // Calculate new dimensions maintaining aspect ratio
+                 if (width > height) {
+                     if (width > maxWidth) {
+                         height = Math.round((height * maxWidth) / width);
+                         width = maxWidth;
+                     }
+                 } else {
+                     if (height > maxHeight) {
+                         width = Math.round((width * maxHeight) / height);
+                         height = maxHeight;
+                     }
+                 }
+                 
+                 canvas.width = width;
+                 canvas.height = height;
+                 
+                 const ctx = canvas.getContext('2d');
+                 if (!ctx) {
+                     console.error(`[Demo] Failed to get canvas context for ${url}`);
+                     resolve(null);
+                     return;
+                 }
+                 
+                 ctx.drawImage(img, 0, 0, width, height);
+                 
+                 // Convert to compressed JPEG (not PNG for better compression)
+                 const quality = 0.7;
+                 const dataUri = canvas.toDataURL('image/jpeg', quality);
+                 console.log(`[Demo] Converted ${url} to data URI (${Math.round(dataUri.length/1024)}KB) [compressed: ${width}x${height}, quality: ${quality}]`);
+                 resolve(dataUri);
                 
             } catch (err) {
                 console.error(`[Demo] Canvas conversion failed for ${url}:`, err);
