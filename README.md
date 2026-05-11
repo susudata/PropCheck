@@ -58,36 +58,10 @@
 
 ---
 
-## 🚀 Quick Start
-
-### Setup
-```bash
-# Sklonuj repo
-git clone <repo-url>
-cd PropCheck
-
-# Otwórz w przeglądarce
-open index.html
-# lub
-npx http-server
-```
-
-### Build (CSS)
-```bash
-# Zainstaluj zależności
-npm install
-
-# Watch mode (development)
-npm run dev
-
-# Minify (production)
-npm run build
-```
-
 ### Try Demo
 1. Otwórz aplikację
 2. Przejdź do Settings
-3. Kliknij "Load Demo Data"
+3. Kliknij "Generuj dane demo"
 4. Eksploruj 5 nieruchomości z 15+ usterkkami
 
 ---
@@ -96,7 +70,7 @@ npm run build
 
 ```
 PropCheck/
-├── docs/                    # 📚 DOKUMENTACJA ACADEMICKA
+├── docs/                    # 📚 DOKUMENTACJA
 │   ├── architecture/        # Opis systemu, decyzje architektoniczne
 │   │   ├── system_overview.md
 │   │   ├── adr_001.md       (localStorage decision)
@@ -168,7 +142,7 @@ PropCheck/
 
 ## 📚 Dokumentacja
 
-### Dla Product Owner / Nauczyciela
+### Dla Product Owner
 → [`docs/business/business_requirements.md`](docs/business/business_requirements.md)
 - Cele produktu
 - User stories
@@ -240,17 +214,6 @@ PropCheck/
 - [ ] Email notifications
 - [ ] User management
 
-### Phase 3 (Team Collaboration) — 🔮 PLANNED
-- [ ] Multiple users per account
-- [ ] Role-based access
-- [ ] Issue assignment
-- [ ] Comments/notes
-
-### Phase 4 (Mobile) — 🔮 PLANNED
-- [ ] React Native app (iOS/Android)
-- [ ] Offline-first sync
-- [ ] Push notifications
-
 ---
 
 ## 🧪 Testing
@@ -296,20 +259,6 @@ propcheck_issues: ~50-500KB (w zależności od zdjęć)
 - 🔮 Unlimited storage
 - 🔮 Multi-device sync
 - 🔮 User authentication
-
----
-
-## 📞 Support
-
-### Dla nauczyciela/recenzenta
-- Zob. [`AGENTS.md`](AGENTS.md) — instrukcje dla AI agentów
-- Zob. [`docs/`](docs/) — pełna dokumentacja academicka
-
-### Dla użytkownika
-1. Otwórz aplikację
-2. Kliknij Settings → Load Demo Data
-3. Eksploruj features
-4. Spróbuj dodać własną nieruchomość
 
 ---
 
