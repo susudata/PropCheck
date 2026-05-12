@@ -80,18 +80,39 @@ async function fetchIssuesFromSupabase() {
         
         console.log('[fetchIssuesFromSupabase] Supabase returned', data.length, 'issues');
         
-        const transformed = data.map(issue => ({
-            id: issue.id,
-            propertyId: issue.property_id,
-            name: issue.name,
-            location: issue.location,
-            description: issue.description,
-            status: issue.status,
-            createdAt: issue.created_at,
-            updatedAt: issue.updated_at,
-            photos: Array.isArray(issue.photos) ? issue.photos : [],
-            pinPosition: issue.pin_position
-        }));
+        const transformed = data.map(issue => {
+            // Extract base64 data from photo objects
+            let photoData = [];
+            if (Array.isArray(issue.photos) && issue.photos.length > 0) {
+                photoData = issue.photos.map(photo => {
+                    // If photo is an object with .data field (from Supabase JSONB), extract it
+                    if (typeof photo === 'object' && photo !== null && photo.data) {
+                        console.log('[fetchIssuesFromSupabase] Extracting photo.data from object for issue:', issue.name);
+                        return photo.data;
+                    }
+                    // If photo is already a string (base64), return as-is
+                    console.log('[fetchIssuesFromSupabase] Photo is already string for issue:', issue.name);
+                    return photo;
+                });
+            }
+            
+            if (photoData.length > 0) {
+                console.log('[fetchIssuesFromSupabase] Issue', issue.name, 'has', photoData.length, 'photos (first:', photoData[0].substring(0, 40) + '...)');
+            }
+            
+            return {
+                id: issue.id,
+                propertyId: issue.property_id,
+                name: issue.name,
+                location: issue.location,
+                description: issue.description,
+                status: issue.status,
+                createdAt: issue.created_at,
+                updatedAt: issue.updated_at,
+                photos: photoData,
+                pinPosition: issue.pin_position
+            };
+        });
         
         console.log('[fetchIssuesFromSupabase] Transformed to', transformed.length, 'issues');
         
@@ -165,6 +186,12 @@ async function addIssueToSupabase(propertyId, name, location, description, statu
             photos: photosData,
             pinPosition: data.pin_position
         };
+        
+        console.log('[addIssueToSupabase] Transformed photo structure:', {
+            inputPhotoCount: photos ? photos.length : 0,
+            outputPhotoCount: transformed.photos.length,
+            firstPhotoPreview: transformed.photos.length > 0 ? transformed.photos[0].substring(0, 50) + '...' : 'none'
+        });
         
         issuesCache.push(transformed);
         saveIssuesToCache(issuesCache);
@@ -291,6 +318,17 @@ async function updateIssueInSupabase(issueId, name, location, description, statu
         
         const index = issuesCache.findIndex(i => i.id === issueId);
         if (index !== -1) {
+            // Extract base64 data from photo objects
+            let photoData = issuesCache[index].photos || [];
+            if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
+                photoData = data.photos.map(photo => {
+                    if (typeof photo === 'object' && photo !== null && photo.data) {
+                        return photo.data;
+                    }
+                    return photo;
+                });
+            }
+            
             issuesCache[index] = {
                 id: data.id,
                 propertyId: data.property_id,
@@ -300,7 +338,7 @@ async function updateIssueInSupabase(issueId, name, location, description, statu
                 status: data.status,
                 createdAt: data.created_at,
                 updatedAt: data.updated_at,
-                photos: data.photos || issuesCache[index].photos,
+                photos: photoData,
                 pinPosition: data.pin_position
             };
             saveIssuesToCache(issuesCache);

@@ -2333,7 +2333,7 @@ p {
     touch-action: none;
     vertical-align: middle;
     max-height: 62vh;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .floorplan-map-container.view-mode {
@@ -2356,7 +2356,8 @@ p {
     align-items: flex-start;
     gap: var(--space-lg);
     padding: var(--space-md) var(--space-xl);
-    overflow: auto;
+    overflow-x: visible;
+    overflow-y: auto;
     background: var(--color-cream-light, #FAF7F2);
     border-top: 1px solid var(--color-border-light);
     border-bottom: 1px solid var(--color-border-light);
@@ -3185,6 +3186,10 @@ p {
     .main-content {
         padding-top: var(--space-xl) !important;
     }
+    
+    .header-actions #reportBtn {
+        display: flex !important;
+    }
 }
 
 /* Landing Page Responsive */
@@ -3425,6 +3430,7 @@ p {
 
     .header-actions #addIssueBtn,
     .header-actions .btn-primary,
+    .header-actions #reportBtn,
     .header-actions #openReportModalBtn {
         display: none;
     }

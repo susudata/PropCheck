@@ -100,6 +100,13 @@
                     </svg>
                     Dodaj nieruchomość
                 </button>
+                <button class="btn btn-outline" id="reportBtn">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 2V13M10 13L6 9M10 13L14 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 15H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    Raport
+                </button>
                 <!-- User Menu -->
                 <div class="user-menu" id="userMenu">
                     <button class="user-menu-trigger" id="userMenuTrigger">
@@ -611,8 +618,10 @@
                 </div>
 
                 <div class="floorplan-map-container" id="floorplanMapContainer">
-                    <img src="" alt="Plan mieszkania" class="floorplan-map-img" id="floorplanMapImg">
-                    <!-- pins injected here -->
+                    <div style="position: relative; overflow: hidden;">
+                        <img src="" alt="Plan mieszkania" class="floorplan-map-img" id="floorplanMapImg">
+                    </div>
+                    <!-- pins injected here - outside overflow container so they can extend beyond -->
                     <div class="pin-tooltip" id="pinTooltip">
                          <span class="pin-tooltip-dot" id="pinTooltipDot"></span>
                          <div class="pin-tooltip-content">

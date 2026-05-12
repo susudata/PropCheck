@@ -511,14 +511,14 @@ function initBottomNav() {
     }
 
     // ---- Bottom nav: "Raport" opens PDF modal ----
-    const reportNavItem = document.querySelector('.bottom-nav-item[data-section="reports"]');
-    if (reportNavItem) {
-        reportNavItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('openReportModalBtn');
-            if (btn) btn.click();
-        });
-    }
+     const reportNavItem = document.querySelector('.bottom-nav-item[data-section="reports"]');
+     if (reportNavItem) {
+         reportNavItem.addEventListener('click', (e) => {
+             e.preventDefault();
+             const btn = document.getElementById('reportBtn') || document.getElementById('openReportModalBtn');
+             if (btn) btn.click();
+         });
+     }
 
     // ---- Bottom nav: "Więcej/Ustawienia" opens settings modal ----
     const settingsNavItem = document.querySelector('.bottom-nav-item[data-section="settings"]');
@@ -1012,13 +1012,19 @@ function initPropertyIssuesModal() {
             
             const statusBadge = issue.status === 'inProgress' ? 'warning' : issue.status;
             
-            const photosHtml = issue.photos && issue.photos.length > 0 
-                ? `<div class="issue-photos-grid">
-                     ${issue.photos.map((photo, idx) => `
-                       <img src="${escapeHtml(photo)}" class="issue-photo-preview" alt="Zdjęcie usterki ${idx + 1}" data-photo-index="${idx}">
-                     `).join('')}
-                   </div>`
-                : '';
+             const photosHtml = issue.photos && issue.photos.length > 0 
+                 ? `<div class="issue-photos-grid">
+                      ${issue.photos.map((photo, idx) => {
+                        // Defensive: ensure photo is a string (base64), not an object
+                        const photoSrc = typeof photo === 'string' ? photo : (photo?.data || '');
+                        if (!photoSrc) {
+                          console.warn('[renderPropertyIssues] Photo at index', idx, 'is invalid for issue:', issue.name, 'photo type:', typeof photo);
+                          return '';
+                        }
+                        return `<img src="${escapeHtml(photoSrc)}" class="issue-photo-preview" alt="Zdjęcie usterki ${idx + 1}" data-photo-index="${idx}">`;
+                      }).join('')}
+                    </div>`
+                 : '';
             
             const pinHtml = issue.pinPosition
                 ? `<span title="Na mapie" style="color: var(--color-primary); font-size: 13px; line-height:1; flex-shrink:0;">
@@ -1612,13 +1618,19 @@ function renderIssuesList() {
             <div class="issue-content">
                 <div class="issue-title">${escapeHtml(issue.name)}</div>
                 <div class="issue-property">${property ? escapeHtml(property.name) : 'Nieznana nieruchomość'}</div>
-                ${issue.photos && issue.photos.length > 0 
-                  ? `<div class="issue-photos-grid">
-                       ${issue.photos.map((photo, idx) => `
-                         <img src="${escapeHtml(photo)}" class="issue-photo-preview" alt="Zdjęcie usterki ${idx + 1}" data-photo-index="${idx}">
-                       `).join('')}
-                     </div>`
-                  : ''}
+                 ${issue.photos && issue.photos.length > 0 
+                   ? `<div class="issue-photos-grid">
+                        ${issue.photos.map((photo, idx) => {
+                          // Defensive: ensure photo is a string (base64), not an object
+                          const photoSrc = typeof photo === 'string' ? photo : (photo?.data || '');
+                          if (!photoSrc) {
+                            console.warn('[renderIssuesList] Photo at index', idx, 'is invalid for issue:', issue.name, 'photo type:', typeof photo);
+                            return '';
+                          }
+                          return `<img src="${escapeHtml(photoSrc)}" class="issue-photo-preview" alt="Zdjęcie usterki ${idx + 1}" data-photo-index="${idx}">`;
+                        }).join('')}
+                      </div>`
+                   : ''}
             </div>
             <div class="issue-meta">
                 <span class="issue-badge badge-${statusBadge}">${issue.status === 'inProgress' ? 'Usterka' : issue.status === 'critical' ? 'Krytyczne' : 'Rozwiązane'}</span>
@@ -1751,56 +1763,56 @@ function openEditIssueModal(issueId, returnToMapPropertyId) {
      // Show/hide "Gotowe + Umieść" button for the issue's property
      updateSubmitAndPlaceVisibility(issue.propertyId);
 
-    const form = document.getElementById('addIssueForm');
-    const originalSubmit = form.onsubmit;
-    form.onsubmit = function(e) {
-        e.preventDefault();
+     const form = document.getElementById('addIssueForm');
+     const originalSubmit = form.onsubmit;
+     form.onsubmit = function(e) {
+         e.preventDefault();
 
-         const name = document.getElementById('issueName').value.trim();
-         const location = document.getElementById('issueLocation').value.trim();
-         const description = document.getElementById('issueDescription').value.trim();
-         const isCritical = document.getElementById('issueCritical').checked;
-         const photos = getPhotoData();
+          const name = document.getElementById('issueName').value.trim();
+          const location = document.getElementById('issueLocation').value.trim();
+          const description = document.getElementById('issueDescription').value.trim();
+          const isCritical = document.getElementById('issueCritical').checked;
+          const photos = getPhotoData();
 
-        if (name && location) {
-            updateIssueEdit(issueId, name, location, description, isCritical, photos);
-            const modalEl = document.getElementById('addIssueModal');
-            const handleTransitionEnd = (ev) => {
-                if (ev.target === modalEl && ev.propertyName === 'opacity') {
-                    modalEl.removeEventListener('transitionend', handleTransitionEnd);
-                    const submitBtn = document.getElementById('submitIssueBtn');
-                    const toggleResolvedBtn = document.getElementById('toggleResolvedBtn');
-                    if (submitBtn) {
-                        submitBtn.textContent = 'Dodaj usterkę';
-                    }
-                    if (toggleResolvedBtn) {
-                        toggleResolvedBtn.style.display = 'none';
-                    }
-                }
-            };
-          modalEl.addEventListener('transitionend', handleTransitionEnd);
-          modalEl.classList.remove('active');
-          document.getElementById('addIssueForm').reset();
-          const submitAndPlaceBtn = document.getElementById('submitAndPlaceIssueBtn');
-          if (submitAndPlaceBtn) {
-              submitAndPlaceBtn.style.display = 'none';
-          }
-          clearPhotoPreview();
-          form.onsubmit = null;
-          currentPropertyId = null;
-          isEditMode = false;
+         if (name && location) {
+             updateIssueEdit(issueId, name, location, description, isCritical, photos);
+             const modalEl = document.getElementById('addIssueModal');
+             const handleTransitionEnd = (ev) => {
+                 if (ev.target === modalEl && ev.propertyName === 'opacity') {
+                     modalEl.removeEventListener('transitionend', handleTransitionEnd);
+                     const submitBtn = document.getElementById('submitIssueBtn');
+                     const toggleResolvedBtn = document.getElementById('toggleResolvedBtn');
+                     if (submitBtn) {
+                         submitBtn.textContent = 'Dodaj usterkę';
+                     }
+                     if (toggleResolvedBtn) {
+                         toggleResolvedBtn.style.display = 'none';
+                     }
+                 }
+             };
+           modalEl.addEventListener('transitionend', handleTransitionEnd);
+           closeModalTracked('addIssueModal');
+           document.getElementById('addIssueForm').reset();
+           const submitAndPlaceBtn = document.getElementById('submitAndPlaceIssueBtn');
+           if (submitAndPlaceBtn) {
+               submitAndPlaceBtn.style.display = 'none';
+           }
+           clearPhotoPreview();
+           form.onsubmit = null;
+           currentPropertyId = null;
+           isEditMode = false;
 
-          if (isInPropertyModal) {
-              window.renderPropertyIssues(issue.propertyId);
-          }
+           if (isInPropertyModal) {
+               window.renderPropertyIssues(issue.propertyId);
+           }
 
-          const mapPropId = returnToMapAfterEditPropertyId;
-          returnToMapAfterEditPropertyId = null;
-          if (mapPropId) {
-              openFloorplanMapModal(mapPropId);
-          }
-        }
-    };
+           const mapPropId = returnToMapAfterEditPropertyId;
+           returnToMapAfterEditPropertyId = null;
+           if (mapPropId) {
+               openFloorplanMapModal(mapPropId);
+           }
+         }
+     };
 
       // "Gotowe + Umieść" button in edit mode: save and go to map
        if (submitAndPlaceBtn) {
@@ -1813,100 +1825,100 @@ function openEditIssueModal(issueId, returnToMapPropertyId) {
                const isCritical = document.getElementById('issueCritical').checked;
                const photos = getPhotoData();
 
-               if (name && location) {
-                   updateIssueEdit(issueId, name, location, description, isCritical, photos);
-                   const modalEl = document.getElementById('addIssueModal');
-                    const handleTransitionEnd = (ev) => {
-                        if (ev.target === modalEl && ev.propertyName === 'opacity') {
-                            modalEl.removeEventListener('transitionend', handleTransitionEnd);
-                            const submitBtn = document.getElementById('submitIssueBtn');
-                            if (submitBtn) {
-                                submitBtn.textContent = 'Dodaj usterkę';
-                            }
-                        }
-                    };
-                   modalEl.addEventListener('transitionend', handleTransitionEnd);
-                   modalEl.classList.remove('active');
-                   document.getElementById('addIssueForm').reset();
-                   clearPhotoPreview();
-                   form.onsubmit = null;
-                   currentPropertyId = null;
-                   isEditMode = false;
+                if (name && location) {
+                    updateIssueEdit(issueId, name, location, description, isCritical, photos);
+                    const modalEl = document.getElementById('addIssueModal');
+                     const handleTransitionEnd = (ev) => {
+                         if (ev.target === modalEl && ev.propertyName === 'opacity') {
+                             modalEl.removeEventListener('transitionend', handleTransitionEnd);
+                             const submitBtn = document.getElementById('submitIssueBtn');
+                             if (submitBtn) {
+                                 submitBtn.textContent = 'Dodaj usterkę';
+                             }
+                         }
+                     };
+                    modalEl.addEventListener('transitionend', handleTransitionEnd);
+                    closeModalTracked('addIssueModal');
+                    document.getElementById('addIssueForm').reset();
+                    clearPhotoPreview();
+                    form.onsubmit = null;
+                    currentPropertyId = null;
+                    isEditMode = false;
 
-                   if (isInPropertyModal) {
-                       window.renderPropertyIssues(issue.propertyId);
-                   }
+                    if (isInPropertyModal) {
+                        window.renderPropertyIssues(issue.propertyId);
+                    }
 
-                   returnToMapAfterEditPropertyId = null;
-                   // Open map in single-pin placement mode for this issue
-                   activePinIssueId = issueId;
-                   openFloorplanMapModal(issue.propertyId, issueId);
-               }
+                    returnToMapAfterEditPropertyId = null;
+                    // Open map in single-pin placement mode for this issue
+                    activePinIssueId = issueId;
+                    openFloorplanMapModal(issue.propertyId, issueId);
+                }
            };
            
            // Clear existing onclick handler and set the new one
            submitAndPlaceBtn.onclick = handleEditSubmitAndPlace;
        }
 
-      document.getElementById('closeIssueModal').onclick = function() {
-          const modalEl = document.getElementById('addIssueModal');
-          const handleTransitionEnd = (e) => {
-              if (e.target === modalEl && e.propertyName === 'opacity') {
-                  modalEl.removeEventListener('transitionend', handleTransitionEnd);
-                  const submitBtn = document.getElementById('submitIssueBtn');
-                  const toggleResolvedBtn = document.getElementById('toggleResolvedBtn');
-                  if (submitBtn) {
-                      submitBtn.textContent = 'Dodaj usterkę';
-                  }
-                  if (toggleResolvedBtn) {
-                      toggleResolvedBtn.style.display = 'none';
-                  }
-              }
-          };
-          modalEl.addEventListener('transitionend', handleTransitionEnd);
-          modalEl.classList.remove('active');
-          document.getElementById('addIssueForm').reset();
-          form.onsubmit = null;
-          currentPropertyId = null;
-          isEditMode = false;
-          returnToMapAfterEditPropertyId = null;
-          clearPhotoPreview();
-          if (returnToMapPropertyId) {
-              openFloorplanMapModal(returnToMapPropertyId);
-          }
-      };
+       document.getElementById('closeIssueModal').onclick = function() {
+           const modalEl = document.getElementById('addIssueModal');
+           const handleTransitionEnd = (e) => {
+               if (e.target === modalEl && e.propertyName === 'opacity') {
+                   modalEl.removeEventListener('transitionend', handleTransitionEnd);
+                   const submitBtn = document.getElementById('submitIssueBtn');
+                   const toggleResolvedBtn = document.getElementById('toggleResolvedBtn');
+                   if (submitBtn) {
+                       submitBtn.textContent = 'Dodaj usterkę';
+                   }
+                   if (toggleResolvedBtn) {
+                       toggleResolvedBtn.style.display = 'none';
+                   }
+               }
+           };
+           modalEl.addEventListener('transitionend', handleTransitionEnd);
+           closeModalTracked('addIssueModal');
+           document.getElementById('addIssueForm').reset();
+           form.onsubmit = null;
+           currentPropertyId = null;
+           isEditMode = false;
+           returnToMapAfterEditPropertyId = null;
+           clearPhotoPreview();
+           if (returnToMapPropertyId) {
+               openFloorplanMapModal(returnToMapPropertyId);
+           }
+       };
 
-      document.getElementById('cancelAddIssue').onclick = function() {
-          const modalEl = document.getElementById('addIssueModal');
-          const handleTransitionEnd = (e) => {
-              if (e.target === modalEl && e.propertyName === 'opacity') {
-                  modalEl.removeEventListener('transitionend', handleTransitionEnd);
-                  const submitBtn = document.getElementById('submitIssueBtn');
-                  const toggleResolvedBtn = document.getElementById('toggleResolvedBtn');
-                  if (submitBtn) {
-                      submitBtn.textContent = 'Dodaj usterkę';
-                  }
-                  if (toggleResolvedBtn) {
-                      toggleResolvedBtn.style.display = 'none';
-                  }
-              }
-          };
-          modalEl.addEventListener('transitionend', handleTransitionEnd);
-          modalEl.classList.remove('active');
-          document.getElementById('addIssueForm').reset();
-          const submitAndPlaceBtn = document.getElementById('submitAndPlaceIssueBtn');
-          if (submitAndPlaceBtn) {
-              submitAndPlaceBtn.style.display = 'none';
-          }
-          form.onsubmit = null;
-          currentPropertyId = null;
-          isEditMode = false;
-          returnToMapAfterEditPropertyId = null;
-          clearPhotoPreview();
-          if (returnToMapPropertyId) {
-              openFloorplanMapModal(returnToMapPropertyId);
-          }
-      };
+       document.getElementById('cancelAddIssue').onclick = function() {
+           const modalEl = document.getElementById('addIssueModal');
+           const handleTransitionEnd = (e) => {
+               if (e.target === modalEl && e.propertyName === 'opacity') {
+                   modalEl.removeEventListener('transitionend', handleTransitionEnd);
+                   const submitBtn = document.getElementById('submitIssueBtn');
+                   const toggleResolvedBtn = document.getElementById('toggleResolvedBtn');
+                   if (submitBtn) {
+                       submitBtn.textContent = 'Dodaj usterkę';
+                   }
+                   if (toggleResolvedBtn) {
+                       toggleResolvedBtn.style.display = 'none';
+                   }
+               }
+           };
+           modalEl.addEventListener('transitionend', handleTransitionEnd);
+           closeModalTracked('addIssueModal');
+           document.getElementById('addIssueForm').reset();
+           const submitAndPlaceBtn = document.getElementById('submitAndPlaceIssueBtn');
+           if (submitAndPlaceBtn) {
+               submitAndPlaceBtn.style.display = 'none';
+           }
+           form.onsubmit = null;
+           currentPropertyId = null;
+           isEditMode = false;
+           returnToMapAfterEditPropertyId = null;
+           clearPhotoPreview();
+           if (returnToMapPropertyId) {
+               openFloorplanMapModal(returnToMapPropertyId);
+           }
+       };
 
      document.getElementById('issueName').focus();
  }
@@ -1946,7 +1958,7 @@ async function updateIssueEdit(issueId, name, location, description, isCritical,
         : (isCritical ? 'critical' : 'inProgress');
 
     // Try Supabase first
-    const result = await updateIssueInSupabase(issueId, name, location, description, newStatus, currentIssue.pinPosition || null);
+    const result = await updateIssueInSupabase(issueId, name, location, description, newStatus, currentIssue.pinPosition || null, photos);
 
     if (result.success) {
         // Supabase sync successful — rebuild issues from cache, but preserve local photos
@@ -2327,17 +2339,19 @@ function hidePinTooltip() {
  * Attach pointer-based drag to a pin element.
  */
 function attachPinDrag(pin, issue, container) {
-    pin.addEventListener('pointerdown', (e) => {
-        if (mapMode !== 'edit') return;
-        e.stopPropagation();
-        e.preventDefault();
+     pin.addEventListener('pointerdown', (e) => {
+         if (mapMode !== 'edit') return;
+         e.stopPropagation();
+         e.preventDefault();
 
-        isDraggingPin = false; // will be set true after first move
-        let didMove = false;
+         isDraggingPin = false; // will be set true after first move
+         let didMove = false;
 
-        pin.setPointerCapture(e.pointerId);
-        pin.classList.add('dragging');
-        hidePinTooltip();
+         console.log('[Pin Drag] Starting drag for issue:', issue.id, 'Pin position before:', pin.style.left, pin.style.top);
+         window._dragDebug = true; // Enable diagnostic logging in onMove
+         pin.setPointerCapture(e.pointerId);
+         pin.classList.add('dragging');
+         hidePinTooltip();
 
         function onMove(ev) {
             didMove = true;
@@ -2349,15 +2363,22 @@ function attachPinDrag(pin, issue, container) {
             let x = ((ev.clientX - imgRect.left) / imgRect.width)  * 100;
             let y = ((ev.clientY - imgRect.top)  / imgRect.height) * 100;
 
-            // Clamp to image bounds
-            x = Math.max(1, Math.min(99, x));
-            y = Math.max(1, Math.min(99, y));
-
+            // Do NOT clamp during move — allow pin to track cursor even beyond image bounds
+            // This enables smooth dragging to reserve sidebar
+            // We'll clamp only when saving to database on pointerup
+            
             pin.style.left = `${x}%`;
             pin.style.top  = `${y}%`;
+            
+            // Diagnostic logging
+            if (window._dragDebug) {
+                console.log(`[Drag] unclamped x=${x.toFixed(1)}%, y=${y.toFixed(1)}%, clientX=${ev.clientX}, imgRect.left=${imgRect.left}`);
+            }
         }
 
         function onUp(ev) {
+            window._dragDebug = false; // Disable diagnostic logging
+            console.log('[Pin Drag] Finished drag. Final position:', pin.style.left, pin.style.top);
             pin.classList.remove('dragging');
             pin.removeEventListener('pointermove', onMove);
             pin.removeEventListener('pointerup',   onUp);
@@ -2370,13 +2391,14 @@ function attachPinDrag(pin, issue, container) {
                 const reserveSidebar = document.getElementById('mapReserveSidebar');
                 const sidebarRect = reserveSidebar ? reserveSidebar.getBoundingClientRect() : null;
 
-                // Check if dropped onto reserve sidebar
+                // Check if dropped onto reserve sidebar — check ACTUAL cursor position, not clamped pin position
                 if (sidebarRect && 
                     ev.clientX >= sidebarRect.left && 
                     ev.clientX <= sidebarRect.right &&
                     ev.clientY >= sidebarRect.top && 
                     ev.clientY <= sidebarRect.bottom) {
                     // Remove pin from map (clear pinPosition)
+                    console.log('[Pin Drag] Dropped on reserve sidebar at:', {clientX: ev.clientX, clientY: ev.clientY}, 'sidebar rect:', sidebarRect);
                     const idx = issues.findIndex(i => i.id === issue.id);
                     if (idx !== -1) {
                         issues[idx] = { ...issues[idx], pinPosition: null };
@@ -2384,11 +2406,13 @@ function attachPinDrag(pin, issue, container) {
                         renderMapPins(currentMapPropertyId, activePinIssueId);
                     }
                 } else {
-                    // Update pin position on map
+                    // Update pin position on map — use clamped position for storage
                     let x = ((ev.clientX - imgRect.left) / imgRect.width)  * 100;
                     let y = ((ev.clientY - imgRect.top)  / imgRect.height) * 100;
                     x = Math.max(1, Math.min(99, x));
                     y = Math.max(1, Math.min(99, y));
+
+                    console.log('[Pin Drag] Dropped on map at cursor:', {clientX: ev.clientX, clientY: ev.clientY}, 'saving position:', {x: x.toFixed(1), y: y.toFixed(1)});
 
                     // Persist
                     const idx = issues.findIndex(i => i.id === issue.id);
@@ -3505,7 +3529,7 @@ function showPdfToast(message, isError) {
 
 function initReportModal() {
     const modal = document.getElementById('reportModal');
-    const openBtn = document.getElementById('openReportModalBtn');
+    const openBtn = document.getElementById('openReportModalBtn') || document.getElementById('reportBtn');
     const closeBtn = document.getElementById('closeReportModal');
     const cancelBtn = document.getElementById('cancelReport');
     const confirmBtn = document.getElementById('confirmReport');
