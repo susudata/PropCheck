@@ -212,6 +212,20 @@ async function compressImageToBase64(file, maxWidth = 1024, maxHeight = 1024, qu
 let activeModalId = null; // Currently active modal ID for tracking
 
 /**
+ * Prevent/allow page scrolling when modal is open/closed
+ */
+function updateScrollLock() {
+    const isModalOpen = activeModalId !== null;
+    if (isModalOpen) {
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+    }
+}
+
+/**
  * Open a modal and automatically close the previously active modal.
  * @param {string} modalId - ID of the modal element to open
  * @param {Function} onOpen - Optional callback after opening
@@ -230,6 +244,7 @@ function openModalWithAutoClose(modalId, onOpen) {
     if (modal) {
         modal.classList.add('active');
         activeModalId = modalId;
+        updateScrollLock();
         
         // Execute callback if provided
         if (typeof onOpen === 'function') {
@@ -248,6 +263,7 @@ function closeModalTracked(modalId) {
         modal.classList.remove('active');
         if (activeModalId === modalId) {
             activeModalId = null;
+            updateScrollLock();
         }
     }
 }
@@ -314,14 +330,17 @@ function renderPhotoPreviews() {
 }
 
 // Wait for DOM to be fully ready
-document.addEventListener('DOMContentLoaded', async function() {
-     // Initialize IndexedDB for photos
-     try {
-         await initPhotoDB();
-     } catch (err) {
-         console.warn('IndexedDB not available, will use localStorage with compression');
-     }
-     
+ document.addEventListener('DOMContentLoaded', async function() {
+      console.log('[DOMContentLoaded] Starting initialization...');
+      window._diagnostics.propertiesLoadStart = new Date().toISOString();
+      
+      // Initialize IndexedDB for photos
+      try {
+          await initPhotoDB();
+      } catch (err) {
+          console.warn('IndexedDB not available, will use localStorage with compression');
+      }
+      
       initAddPropertyModal();
       initAddIssueModal();
       initPropertyIssuesModal();
@@ -331,10 +350,17 @@ document.addEventListener('DOMContentLoaded', async function() {
       initSettingsModal();
       
       // Initialize Supabase sync for properties
+      console.log('[DOMContentLoaded] Calling initPropertiesSync...');
       await initPropertiesSync();
+      console.log('[DOMContentLoaded] initPropertiesSync completed');
+      console.log('[DIAG] After initPropertiesSync:');
+      console.log('[DIAG]   window.properties:', window.properties ? window.properties.length : 'undefined');
+      console.log('[DIAG]   window.propertiesCache:', window.propertiesCache ? window.propertiesCache.length : 'undefined');
+      console.log('[DIAG]   properties local var:', properties.length);
       
       // Sync cache to global properties array (for offline-first)
       if (window.propertiesCache && window.propertiesCache.length > 0) {
+          console.log('[DIAG] Setting properties from propertiesCache:', window.propertiesCache.length);
           properties = window.propertiesCache;
       }
       
@@ -346,32 +372,60 @@ document.addEventListener('DOMContentLoaded', async function() {
           issues = window.issuesCache;
       }
       
-      await loadProperties();
+      // Check if initPropertiesSync already loaded properties to window.properties
+      console.log('[DOMContentLoaded] About to render properties:');
+      console.log('[DIAG]   window.properties:', window.properties ? window.properties.length : 'undefined');
+      console.log('[DIAG]   window.propertiesCache:', window.propertiesCache ? window.propertiesCache.length : 'undefined');
+      console.log('[DIAG]   properties local var:', properties.length);
+      
+      // Always prefer window.properties (from initPropertiesSync), then fall back to cache, then load
+      if (window.properties && window.properties.length > 0) {
+          console.log('[DOMContentLoaded] Using window.properties:', window.properties.length);
+          properties = window.properties;
+      } else if (window.propertiesCache && window.propertiesCache.length > 0) {
+          console.log('[DOMContentLoaded] Using window.propertiesCache:', window.propertiesCache.length);
+          properties = window.propertiesCache;
+      } else {
+          console.log('[DOMContentLoaded] All sources empty, calling loadProperties()');
+          await loadProperties();
+      }
+      
+      console.log('[DOMContentLoaded] Final properties.length:', properties.length);
+      window._diagnostics.propertiesRenderStart = new Date().toISOString();
+      renderProperties();
+      window._diagnostics.propertiesRenderEnd = new Date().toISOString();
+      updateStats();
+      
       loadIssues();
     
-    // Mobile menu initialization (simplified, inline)
-    const menuBtn = document.getElementById('mobileMenuBtn');
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    if (menuBtn && sidebar && overlay) {
-        menuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
-        });
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-        });
-        const sidebarLinks = document.querySelectorAll('.sidebar-link');
-        sidebarLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('open');
-                    overlay.classList.remove('active');
-                }
-            });
-        });
-    }
+      // Mobile menu initialization (simplified, inline)
+       const menuBtn = document.getElementById('mobileMenuBtn');
+       const sidebar = document.querySelector('.sidebar');
+       const overlay = document.getElementById('sidebarOverlay');
+       
+       if (menuBtn && sidebar && overlay) {
+           menuBtn.addEventListener('click', () => {
+               sidebar.classList.toggle('open');
+               overlay.classList.toggle('active');
+           });
+       }
+       
+       if (overlay) {
+           overlay.addEventListener('click', () => {
+               sidebar.classList.remove('open');
+               overlay.classList.remove('active');
+           });
+       }
+       
+       const sidebarLinks = document.querySelectorAll('.sidebar-link');
+       sidebarLinks.forEach(link => {
+           link.addEventListener('click', () => {
+               if (window.innerWidth <= 768) {
+                   sidebar.classList.remove('open');
+                   overlay.classList.remove('active');
+               }
+           });
+       });
 
     initImageViewerModal();
     initBottomNav();
@@ -546,38 +600,38 @@ function initAddIssueModal() {
          });
      }
 
-      // "Gotowe + Umieść" button: save issue and go to map placement mode (add mode only)
-      // In edit mode, handler is set in openEditIssueModal() separately
-      const submitAndPlaceBtn = document.getElementById('submitAndPlaceIssueBtn');
-      if (submitAndPlaceBtn) {
-          submitAndPlaceBtn.addEventListener('click', (e) => {
-              // Skip in edit mode (handled by openEditIssueModal) - check BEFORE preventDefault
-              if (isEditMode) return;
-              
-              e.preventDefault();
+       // "Gotowe + Umieść" button: save issue and go to map placement mode (add mode only)
+       // In edit mode, handler is set in openEditIssueModal() separately
+       const submitAndPlaceBtn = document.getElementById('submitAndPlaceIssueBtn');
+       if (submitAndPlaceBtn) {
+           submitAndPlaceBtn.addEventListener('click', async (e) => {
+               // Skip in edit mode (handled by openEditIssueModal) - check BEFORE preventDefault
+               if (isEditMode) return;
+               
+               e.preventDefault();
 
-              const name = document.getElementById('issueName').value.trim();
-              const location = document.getElementById('issueLocation').value.trim();
-              const description = document.getElementById('issueDescription').value.trim();
-              const propertyIdToUse = currentPropertyId
-                  ? parseInt(currentPropertyId)
-                  : parseInt(document.getElementById('issueProperty').value);
-              const isCritical = document.getElementById('issueCritical').checked;
-              const photos = getPhotoData();
+               const name = document.getElementById('issueName').value.trim();
+               const location = document.getElementById('issueLocation').value.trim();
+               const description = document.getElementById('issueDescription').value.trim();
+               const propertyIdToUse = currentPropertyId
+                   ? parseInt(currentPropertyId)
+                   : parseInt(document.getElementById('issueProperty').value);
+               const isCritical = document.getElementById('issueCritical').checked;
+               const photos = getPhotoData();
 
-              if (name && location && propertyIdToUse) {
-                  const newId = addIssue(propertyIdToUse, name, location, description, isCritical, photos);
-                  closeModal();
-                  if (newId) {
-                      // Immediately open map in single-pin placement mode
-                      activePinIssueId = newId;
-                      openFloorplanMapModal(propertyIdToUse, newId);
-                  }
-              } else if (!propertyIdToUse) {
-                  document.getElementById('issueProperty').focus();
-              }
-          });
-      }
+               if (name && location && propertyIdToUse) {
+                   const newId = await addIssue(propertyIdToUse, name, location, description, isCritical, photos);
+                   closeModal();
+                   if (newId) {
+                       // Immediately open map in single-pin placement mode
+                       activePinIssueId = newId;
+                       openFloorplanMapModal(propertyIdToUse, newId);
+                   }
+               } else if (!propertyIdToUse) {
+                   document.getElementById('issueProperty').focus();
+               }
+           });
+       }
 
      window.openAddIssueModal = function(propertyId) {
         currentPropertyId = propertyId;
@@ -675,7 +729,7 @@ function initAddIssueModal() {
         }
     });
     
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
          e.preventDefault();
          
          // When editing an existing issue, form.onsubmit handles everything — skip addIssue
@@ -693,11 +747,11 @@ function initAddIssueModal() {
          if (name && location && propertyIdToUse) {
              // If a pending pin position exists (from clicking map → open form), apply it directly
              if (window._pendingPinPosition) {
-                 addIssueWithPin(propertyIdToUse, name, location, description, isCritical, photos, window._pendingPinPosition);
+                 await addIssueWithPin(propertyIdToUse, name, location, description, isCritical, photos, window._pendingPinPosition);
                  window._pendingPinPosition = null;
                  closeModal();
              } else {
-                 addIssue(propertyIdToUse, name, location, description, isCritical, photos);
+                 await addIssue(propertyIdToUse, name, location, description, isCritical, photos);
                  closeModal();
              }
          } else if (!propertyIdToUse) {
@@ -1158,45 +1212,70 @@ function saveProperties() {
 }
 
 async function loadProperties() {
-    // Try to fetch from Supabase first
-    const supabaseProperties = await fetchPropertiesFromSupabase();
-    
-    if (supabaseProperties.length > 0) {
-        // Supabase sync successful
-        properties = supabaseProperties;
-        // Update both localStorage keys (for offline fallback)
-        saveProperties();  // Saves to propcheck_properties
-        if (window.savePropertiesToCache) {
-            window.savePropertiesToCache(properties);  // Saves to propcheck_properties_cache
-        }
-    } else {
-        // Fallback to localStorage cache (for offline mode)
-        const cached = window.loadPropertiesFromCache && window.loadPropertiesFromCache();
-        properties = cached || [];
-    }
-    
-    renderProperties();
-    updateStats();
+     console.log('[loadProperties] Starting...');
+     
+     // Check if initPropertiesSync already populated data
+     if (window.properties && window.properties.length > 0) {
+         console.log('[loadProperties] Using window.properties:', window.properties.length);
+         properties = window.properties;
+         renderProperties();
+         updateStats();
+         return;
+     }
+     
+     console.log('[loadProperties] window.properties is empty, fetching from Supabase');
+     
+     // Try to fetch from Supabase first
+     const supabaseProperties = await fetchPropertiesFromSupabase();
+     console.log('[loadProperties] Supabase returned:', supabaseProperties.length);
+     
+     if (supabaseProperties.length > 0) {
+         // Supabase sync successful
+         properties = supabaseProperties;
+         // Update both localStorage keys (for offline fallback)
+         saveProperties();  // Saves to propcheck_properties
+         if (window.savePropertiesToCache) {
+             window.savePropertiesToCache(properties);  // Saves to propcheck_properties_cache
+         }
+     } else {
+         // Fallback to localStorage cache (for offline mode)
+         console.log('[loadProperties] Supabase returned empty, loading from cache');
+         const cached = window.loadPropertiesFromCache && window.loadPropertiesFromCache();
+         properties = cached || [];
+         console.log('[loadProperties] Loaded from cache:', properties.length);
+     }
+     
+     renderProperties();
+     updateStats();
 }
 
 function renderProperties() {
-    const grid = document.getElementById('propertiesGrid');
-    const emptyState = document.getElementById('emptyPropertiesState');
-    
-    const existingCards = grid.querySelectorAll('.property-card');
-    existingCards.forEach(card => card.remove());
-    
-    if (properties.length === 0) {
-        if (emptyState) emptyState.style.display = 'flex';
-        return;
-    }
-    
-    if (emptyState) emptyState.style.display = 'none';
-    
-    properties.forEach(property => {
-        const card = createPropertyCard(property);
-        grid.appendChild(card);
-    });
+     console.log('[renderProperties] Starting... properties.length =', properties.length);
+     const grid = document.getElementById('propertiesGrid');
+     const emptyState = document.getElementById('emptyPropertiesState');
+     
+     if (!grid) {
+         console.warn('[renderProperties] Grid element not found!');
+         return;
+     }
+     
+     const existingCards = grid.querySelectorAll('.property-card');
+     existingCards.forEach(card => card.remove());
+     
+     if (properties.length === 0) {
+         console.log('[renderProperties] No properties to render, showing empty state');
+         if (emptyState) emptyState.style.display = 'flex';
+         return;
+     }
+     
+     console.log('[renderProperties] Rendering', properties.length, 'properties');
+     if (emptyState) emptyState.style.display = 'none';
+     
+     properties.forEach(property => {
+         const card = createPropertyCard(property);
+         grid.appendChild(card);
+     });
+     console.log('[renderProperties] Rendered complete');
 }
 
 function createPropertyCard(property) {
@@ -2737,18 +2816,18 @@ function createIssueItemElement(issue) {
 
         <div class="issue-actions">
             <button class="issue-action-btn" title="Mapa" data-action="map">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
                     <circle cx="10" cy="10" r="2" fill="currentColor"/>
                 </svg>
             </button>
             <button class="issue-action-btn" title="Edytuj" data-action="edit">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                     <path d="M3 17L13 7L15 5L19 1M3 17L5 19L3 17Z" stroke="currentColor" stroke-width="1.5"/>
                 </svg>
             </button>
             <button class="issue-action-btn" title="Usuń" data-action="delete">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                     <path d="M6 3V15H14V3M4 3H16M8 3V1H12V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
             </button>
@@ -2836,23 +2915,29 @@ function showSection(sectionName) {
     const overviewSection = document.getElementById('overviewSection');
     const issuesPageSection = document.getElementById('issuesPageSection');
     const dashboardHeader = document.querySelector('.dashboard-header');
+    const pageTitle = document.querySelector('.page-title');
     
     if (overviewSection) overviewSection.style.display = 'none';
     if (issuesPageSection) issuesPageSection.style.display = 'none';
     
     // Pokaż wybraną sekcję
     if (sectionName === 'issuesPage') {
-        // Ukryj header dashboardu, Issues Page ma własny
-        if (dashboardHeader) dashboardHeader.style.display = 'none';
+        // Zmień tytuł headera dla issues page
+        if (pageTitle) pageTitle.textContent = 'Usterki';
+        if (dashboardHeader) dashboardHeader.style.display = 'flex';
         if (issuesPageSection) {
             issuesPageSection.style.display = 'block';
             renderIssuesPage();
         }
     } else if (sectionName === 'overview') {
-        // Pokaż header dashboardu
+        // Zmień tytuł headera z powrotem
+        if (pageTitle) pageTitle.textContent = 'Przegląd';
         if (dashboardHeader) dashboardHeader.style.display = 'flex';
         if (overviewSection) overviewSection.style.display = 'block';
     }
+    
+    // Scroll do góry
+    window.scrollTo(0, 0);
     
     // Aktualizuj active state w nawigacji
     updateActiveNavigation(sectionName);
@@ -2957,11 +3042,32 @@ function initSettingsModal() {
             window.showDeleteConfirmation(
                 null,
                 'wszystkie dane (mieszkania i usterki)',
-                () => {
+                async () => {
+                    // Delete all properties from Supabase
+                    for (const prop of properties) {
+                        await deletePropertyFromSupabase(prop.id);
+                    }
+                    
+                    // Delete all issues from Supabase
+                    for (const issue of issues) {
+                        await deleteIssueFromSupabase(issue.id);
+                    }
+                    
+                    // Clear localStorage
                     try {
                         localStorage.removeItem('propcheck_properties');
                         localStorage.removeItem('propcheck_issues');
+                        localStorage.removeItem('propcheck_properties_cache');
+                        localStorage.removeItem('propcheck_issues_cache');
                     } catch(e) {}
+                    
+                    // Clear IndexedDB photos
+                    if (photoDB) {
+                        const transaction = photoDB.transaction(['photos'], 'readwrite');
+                        const store = transaction.objectStore('photos');
+                        store.clear();
+                    }
+                    
                     properties = [];
                     issues = [];
                     renderProperties();
@@ -3132,54 +3238,109 @@ async function populateDemoData() {
      }
 
      // Demo properties with data URI floorplans (or null if conversion failed)
-     properties = [
-          { id: 1001, name: 'Apartament Wiśniowa 12/3', address: 'ul. Wiśniowa 12/3, Warszawa', floorplanPhoto: dataUris[0], issues: { critical: 1, inProgress: 4, resolved: 0 } },
-          { id: 1002, name: 'Kawalerka Zielona 7', address: 'ul. Zielona 7, Kraków', floorplanPhoto: dataUris[1], issues: { critical: 1, inProgress: 4, resolved: 0 } },
-          { id: 1003, name: 'Studio Słoneczna 23/A', address: 'ul. Słoneczna 23A, Gdańsk', floorplanPhoto: dataUris[2], issues: { critical: 0, inProgress: 4, resolved: 1 } },
-          { id: 1004, name: 'Mieszkanie Lipowa 5/11', address: 'ul. Lipowa 5/11, Wrocław', floorplanPhoto: dataUris[3], issues: { critical: 1, inProgress: 3, resolved: 1 } },
-          { id: 1005, name: 'Lokal Różana 18', address: 'ul. Różana 18, Poznań', floorplanPhoto: dataUris[4], issues: { critical: 1, inProgress: 3, resolved: 1 } }
+     const demoPropertiesTemplate = [
+          { tempId: 1001, name: 'Apartament Wiśniowa 12/3', address: 'ul. Wiśniowa 12/3, Warszawa', floorplanPhoto: dataUris[0] },
+          { tempId: 1002, name: 'Kawalerka Zielona 7', address: 'ul. Zielona 7, Kraków', floorplanPhoto: dataUris[1] },
+          { tempId: 1003, name: 'Studio Słoneczna 23/A', address: 'ul. Słoneczna 23A, Gdańsk', floorplanPhoto: dataUris[2] },
+          { tempId: 1004, name: 'Mieszkanie Lipowa 5/11', address: 'ul. Lipowa 5/11, Wrocław', floorplanPhoto: dataUris[3] },
+          { tempId: 1005, name: 'Lokal Różana 18', address: 'ul. Różana 18, Poznań', floorplanPhoto: dataUris[4] }
      ];
 
-     // Demo issues with pinPosition coordinates from the template
-     issues = [
-         // Wiśniowa 12/3
-         { id: 2001, propertyId: 1001, name: 'Cieknący kran', location: 'Łazienka', description: 'Kran cieknie od tygodnia, wymaga wymiany uszczelki.', status: 'critical', createdAt: '2026-05-06T14:49:51.966Z', photos: [], pinPosition: { x: 7.601551983529971, y: 68.6407853109015 }, updatedAt: '2026-05-11T15:29:24.690Z' },
-         { id: 2002, propertyId: 1001, name: 'Pęknięta płytka', location: 'Przedpokój', description: 'Płytka ceramiczna przy wejściu popękana.', status: 'inProgress', createdAt: '2026-05-01T14:49:51.966Z', photos: [], pinPosition: { x: 84.123841951065, y: 52.934567280683595 } },
-         { id: 2003, propertyId: 1001, name: 'Skrzypiące drzwi', location: 'Sypialnia', description: 'Drzwi do sypialni skrzypią przy otwieraniu.', status: 'inProgress', createdAt: '2026-04-27T14:49:51.966Z', photos: [], pinPosition: { x: 54.90009765882756, y: 44.04068478164454 } },
-         { id: 2004, propertyId: 1001, name: 'Zatkany odpływ', location: 'Łazienka', description: 'Odpływ w wannie zatkany, woda stoi.', status: 'inProgress', createdAt: '2026-05-08T14:49:51.966Z', photos: [], pinPosition: { x: 93.92139784094809, y: 77.34543626740782 }, updatedAt: '2026-05-11T16:23:16.100Z' },
-         { id: 2005, propertyId: 1001, name: 'Uszkodzony kontakt', location: 'Kuchnia', description: 'Gniazdko elektryczne oderwane od ściany.', status: 'inProgress', createdAt: '2026-05-04T14:49:51.966Z', photos: [], pinPosition: { x: 90.20508353788898, y: 5.058987019898879 } },
-         // Zielona 7
-         { id: 2006, propertyId: 1002, name: 'Brak ciepłej wody', location: 'Łazienka', description: 'Bojler nie nagrzewa wody, wymaga serwisu.', status: 'critical', createdAt: '2026-05-09T14:49:51.966Z', photos: [], pinPosition: null },
-         { id: 2007, propertyId: 1002, name: 'Odpadający tynk', location: 'Salon', description: 'Tynk odpada przy oknie, widoczne zawilgocenie.', status: 'inProgress', createdAt: '2026-04-21T14:49:51.966Z', photos: [], pinPosition: { x: 90.10554089709763, y: 87.78195488721805 } },
-         { id: 2008, propertyId: 1002, name: 'Zepsuta żaluzja', location: 'Sypialnia', description: 'Żaluzja zewnętrzna nie chodzi na silniku.', status: 'inProgress', createdAt: '2026-05-03T14:49:51.966Z', photos: [], pinPosition: { x: 93.7994722955145, y: 22.36842105263158 } },
-         { id: 2009, propertyId: 1002, name: 'Wilgoć na ścianie', location: 'Łazienka', description: 'Pleśń przy futrynie drzwi, konieczne osuszanie.', status: 'inProgress', createdAt: '2026-04-26T14:49:51.966Z', photos: [], pinPosition: { x: 9.102902374670185, y: 11.842105263157894 } },
-         { id: 2010, propertyId: 1002, name: 'Cieknąca rura', location: 'Piwnica', description: 'Rura instalacji wodnej cieknie, ślady rdzy.', status: 'inProgress', createdAt: '2026-05-05T14:49:51.966Z', photos: [], pinPosition: { x: 36.80738786279684, y: 84.3984962406015 } },
-         // Słoneczna 23/A
-         { id: 2011, propertyId: 1003, name: 'Pęknięte okno', location: 'Salon', description: 'Szyba zespolona pęknięta, wymaga wymiany.', status: 'inProgress', createdAt: '2026-05-10T14:49:51.966Z', photos: [], pinPosition: { x: 6.081241586823976, y: 26.365795724465556 }, updatedAt: '2026-05-11T16:27:06.780Z' },
-         { id: 2012, propertyId: 1003, name: 'Zepsuty zamek', location: 'Drzwi wejściowe', description: 'Zamek antywłamaniowy nie blokuje prawidłowo.', status: 'inProgress', createdAt: '2026-04-29T14:49:51.966Z', photos: [], pinPosition: { x: 41.89299759812073, y: 94.04548856278268 } },
-         { id: 2013, propertyId: 1003, name: 'Dziurawy sufit', location: 'Sypialnia', description: 'Po ulewie pojawił się przeciek w suficie.', status: 'inProgress', createdAt: '2026-05-02T14:49:51.966Z', photos: [], pinPosition: { x: 21.960039063531024, y: 50.73048514625972 } },
-         { id: 2014, propertyId: 1003, name: 'Niedziałający domofon', location: 'Wejście', description: 'Domofon nie reaguje na dzwonienie.', status: 'inProgress', createdAt: '2026-04-23T14:49:51.966Z', photos: [], pinPosition: { x: 48.48100931718003, y: 92.58777210164969 } },
-         { id: 2015, propertyId: 1003, name: 'Spękana podłoga', location: 'Kuchnia', description: 'Panele podłogowe spękane przy zlewie.', status: 'resolved', createdAt: '2026-04-11T14:49:51.966Z', photos: [], pinPosition: null },
-         // Lipowa 5/11
-         { id: 2016, propertyId: 1004, name: 'Awaria ogrzewania', location: 'Cały lokal', description: 'Piec gazowy nie uruchamia się, brak ciepła.', status: 'critical', createdAt: '2026-05-10T14:49:51.966Z', photos: [], pinPosition: null, updatedAt: '2026-05-11T16:28:19.652Z' },
-         { id: 2017, propertyId: 1004, name: 'Zepsuty kran', location: 'Kuchnia', description: 'Bateria kuchenna kapie po zakręceniu.', status: 'inProgress', createdAt: '2026-04-30T14:49:51.966Z', photos: [], pinPosition: { x: 52.536557039539666, y: 71.32889028044907 } },
-         { id: 2018, propertyId: 1004, name: 'Pękająca ściana', location: 'Salon', description: 'Rysa przy oknie powiększa się.', status: 'inProgress', createdAt: '2026-04-19T14:49:51.966Z', photos: [], pinPosition: { x: 30.57593834133981, y: 92.226148409894 } },
-         { id: 2019, propertyId: 1004, name: 'Niedziałające gniazdko', location: 'Sypialnia', description: 'Gniazdko przy łóżku nie ma napięcia.', status: 'inProgress', createdAt: '2026-05-07T14:49:51.966Z', photos: [], pinPosition: { x: 2.702845378239983, y: 34.97338641141477 } },
-         { id: 2020, propertyId: 1004, name: 'Zalany sufit', location: 'Łazienka', description: 'Zalanie od góry naprawione przez administrację.', status: 'resolved', createdAt: '2026-03-27T14:49:51.966Z', photos: [], pinPosition: null },
-         // Różana 18
-         { id: 2021, propertyId: 1005, name: 'Cieknący dach', location: 'Taras', description: 'Po deszczu woda wnika przez uszczelnienie tarasu.', status: 'critical', createdAt: '2026-05-08T14:49:51.966Z', photos: [], pinPosition: { x: 42.745098039215684, y: 15.267175572519085 } },
-         { id: 2022, propertyId: 1005, name: 'Zepsuta roleta', location: 'Sypialnia', description: 'Roletka wewnętrzna nie zwijana, pęknięty mechanizm.', status: 'inProgress', createdAt: '2026-04-25T14:49:51.966Z', photos: [], pinPosition: { x: 40.98039215686274, y: 65.39440203562341 }, updatedAt: '2026-05-11T15:36:41.465Z' },
-         { id: 2023, propertyId: 1005, name: 'Zatkany odpływ', location: 'Łazienka', description: 'Woda w brodziku bardzo powolnie spływa', status: 'inProgress', createdAt: '2026-04-16T14:49:51.966Z', photos: [], pinPosition: { x: 95.88235294117648, y: 7.888040712468193 }, updatedAt: '2026-05-11T16:28:58.035Z' },
-         { id: 2024, propertyId: 1005, name: 'Grzyb na ścianie', location: 'Pokój dzienny', description: 'Czarna pleśń w rogu pokoju pod sufitem.', status: 'inProgress', createdAt: '2026-04-28T14:49:51.966Z', photos: [], pinPosition: { x: 20.784313725490197, y: 2.2900763358778624 } },
-         { id: 2025, propertyId: 1005, name: 'Zarysowane drzwi', location: 'Korytarz', description: 'Drzwi do korytarza zarysowane przez przeprowadzkę.', status: 'resolved', createdAt: '2026-03-12T14:49:51.966Z', photos: [], pinPosition: null }
+     // Demo issues template (with tempId references to be mapped after property creation)
+     const demoIssuesTemplate = [
+          // Wiśniowa 12/3
+          { tempPropId: 1001, name: 'Cieknący kran', location: 'Łazienka', description: 'Kran cieknie od tygodnia, wymaga wymiany uszczelki.', status: 'critical', pinPosition: { x: 7.601551983529971, y: 68.6407853109015 } },
+          { tempPropId: 1001, name: 'Pęknięta płytka', location: 'Przedpokój', description: 'Płytka ceramiczna przy wejściu popękana.', status: 'inProgress', pinPosition: { x: 84.123841951065, y: 52.934567280683595 } },
+          { tempPropId: 1001, name: 'Skrzypiące drzwi', location: 'Sypialnia', description: 'Drzwi do sypialni skrzypią przy otwieraniu.', status: 'inProgress', pinPosition: { x: 54.90009765882756, y: 44.04068478164454 } },
+          { tempPropId: 1001, name: 'Zatkany odpływ', location: 'Łazienka', description: 'Odpływ w wannie zatkany, woda stoi.', status: 'inProgress', pinPosition: { x: 93.92139784094809, y: 77.34543626740782 } },
+          { tempPropId: 1001, name: 'Uszkodzony kontakt', location: 'Kuchnia', description: 'Gniazdko elektryczne oderwane od ściany.', status: 'inProgress', pinPosition: { x: 90.20508353788898, y: 5.058987019898879 } },
+          // Zielona 7
+          { tempPropId: 1002, name: 'Brak ciepłej wody', location: 'Łazienka', description: 'Bojler nie nagrzewa wody, wymaga serwisu.', status: 'critical', pinPosition: null },
+          { tempPropId: 1002, name: 'Odpadający tynk', location: 'Salon', description: 'Tynk odpada przy oknie, widoczne zawilgocenie.', status: 'inProgress', pinPosition: { x: 90.10554089709763, y: 87.78195488721805 } },
+          { tempPropId: 1002, name: 'Zepsuta żaluzja', location: 'Sypialnia', description: 'Żaluzja zewnętrzna nie chodzi na silniku.', status: 'inProgress', pinPosition: { x: 93.7994722955145, y: 22.36842105263158 } },
+          { tempPropId: 1002, name: 'Wilgoć na ścianie', location: 'Łazienka', description: 'Pleśń przy futrynie drzwi, konieczne osuszanie.', status: 'inProgress', pinPosition: { x: 9.102902374670185, y: 11.842105263157894 } },
+          { tempPropId: 1002, name: 'Cieknąca rura', location: 'Piwnica', description: 'Rura instalacji wodnej cieknie, ślady rdzy.', status: 'inProgress', pinPosition: { x: 36.80738786279684, y: 84.3984962406015 } },
+          // Słoneczna 23/A
+          { tempPropId: 1003, name: 'Pęknięte okno', location: 'Salon', description: 'Szyba zespolona pęknięta, wymaga wymiany.', status: 'inProgress', pinPosition: { x: 6.081241586823976, y: 26.365795724465556 } },
+          { tempPropId: 1003, name: 'Zepsuty zamek', location: 'Drzwi wejściowe', description: 'Zamek antywłamaniowy nie blokuje prawidłowo.', status: 'inProgress', pinPosition: { x: 41.89299759812073, y: 94.04548856278268 } },
+          { tempPropId: 1003, name: 'Dziurawy sufit', location: 'Sypialnia', description: 'Po ulewie pojawił się przeciek w suficie.', status: 'inProgress', pinPosition: { x: 21.960039063531024, y: 50.73048514625972 } },
+          { tempPropId: 1003, name: 'Niedziałający domofon', location: 'Wejście', description: 'Domofon nie reaguje na dzwonienie.', status: 'inProgress', pinPosition: { x: 48.48100931718003, y: 92.58777210164969 } },
+          { tempPropId: 1003, name: 'Spękana podłoga', location: 'Kuchnia', description: 'Panele podłogowe spękane przy zlewie.', status: 'resolved', pinPosition: null },
+          // Lipowa 5/11
+          { tempPropId: 1004, name: 'Awaria ogrzewania', location: 'Cały lokal', description: 'Piec gazowy nie uruchamia się, brak ciepła.', status: 'critical', pinPosition: null },
+          { tempPropId: 1004, name: 'Zepsuty kran', location: 'Kuchnia', description: 'Bateria kuchenna kapie po zakręceniu.', status: 'inProgress', pinPosition: { x: 52.536557039539666, y: 71.32889028044907 } },
+          { tempPropId: 1004, name: 'Pękająca ściana', location: 'Salon', description: 'Rysa przy oknie powiększa się.', status: 'inProgress', pinPosition: { x: 30.57593834133981, y: 92.226148409894 } },
+          { tempPropId: 1004, name: 'Niedziałające gniazdko', location: 'Sypialnia', description: 'Gniazdko przy łóżku nie ma napięcia.', status: 'inProgress', pinPosition: { x: 2.702845378239983, y: 34.97338641141477 } },
+          { tempPropId: 1004, name: 'Zalany sufit', location: 'Łazienka', description: 'Zalanie od góry naprawione przez administrację.', status: 'resolved', pinPosition: null },
+          // Różana 18
+          { tempPropId: 1005, name: 'Cieknący dach', location: 'Taras', description: 'Po deszczu woda wnika przez uszczelnienie tarasu.', status: 'critical', pinPosition: { x: 42.745098039215684, y: 15.267175572519085 } },
+          { tempPropId: 1005, name: 'Zepsuta roleta', location: 'Sypialnia', description: 'Roletka wewnętrzna nie zwijana, pęknięty mechanizm.', status: 'inProgress', pinPosition: { x: 40.98039215686274, y: 65.39440203562341 } },
+          { tempPropId: 1005, name: 'Zatkany odpływ', location: 'Łazienka', description: 'Woda w brodziku bardzo powoli spływa', status: 'inProgress', pinPosition: { x: 95.88235294117648, y: 7.888040712468193 } },
+          { tempPropId: 1005, name: 'Grzyb na ścianie', location: 'Pokój dzienny', description: 'Czarna pleśń w rogu pokoju pod sufitem.', status: 'inProgress', pinPosition: { x: 20.784313725490197, y: 2.2900763358778624 } },
+          { tempPropId: 1005, name: 'Zarysowane drzwi', location: 'Korytarz', description: 'Drzwi do korytarza zarysowane przez przeprowadzkę.', status: 'resolved', pinPosition: null }
      ];
 
+     // Step 1: Sync all properties to Supabase and build ID mapping (tempId -> Supabase ID)
+     console.log('[Demo] Syncing', demoPropertiesTemplate.length, 'properties to Supabase...');
+     const tempIdToSupabaseId = new Map();
+     
+     for (const prop of demoPropertiesTemplate) {
+         try {
+             const result = await addPropertyToSupabase(prop.name, prop.address, prop.floorplanPhoto || null);
+             if (result.success && result.data) {
+                 tempIdToSupabaseId.set(prop.tempId, result.data.id);
+                 console.log('[Demo] Property synced:', prop.name, '-> Supabase ID:', result.data.id);
+                 properties.push(result.data);
+             } else {
+                 console.warn('[Demo] Failed to sync property:', prop.name, result.error);
+             }
+         } catch (err) {
+             console.error('[Demo] Error syncing property:', prop.name, err);
+         }
+     }
+
+     // Step 2: Sync all issues to Supabase using mapped property IDs
+     console.log('[Demo] Syncing', demoIssuesTemplate.length, 'issues to Supabase...');
+     
+     for (const issue of demoIssuesTemplate) {
+         try {
+             const supabasePropertyId = tempIdToSupabaseId.get(issue.tempPropId);
+             if (!supabasePropertyId) {
+                 console.warn('[Demo] Skipping issue - property not synced:', issue.name);
+                 continue;
+             }
+             
+             const result = await addIssueToSupabase(
+                 supabasePropertyId,
+                 issue.name,
+                 issue.location,
+                 issue.description,
+                 issue.status,
+                 [], // no photos in demo
+                 issue.pinPosition || null
+             );
+             
+             if (result.success && result.data) {
+                 console.log('[Demo] Issue synced:', issue.name, '-> Supabase ID:', result.data.id);
+                 issues.push(result.data);
+             } else {
+                 console.warn('[Demo] Failed to sync issue:', issue.name, result.error);
+             }
+         } catch (err) {
+             console.error('[Demo] Error syncing issue:', issue.name, err);
+         }
+     }
+
+     // Step 3: Update local UI and caches
+     console.log('[Demo] Updating local UI and caches...');
      saveProperties();
      saveIssues();
      updatePropertyIssueCounts();
      updateStats();
      renderProperties();
      renderIssuesList();
+     
+     console.log('[Demo] Demo data population complete! Properties:', properties.length, 'Issues:', issues.length);
  }
 
 // ─── Data Export / Import ─────────────────────────────────────────────────────
@@ -3267,22 +3428,50 @@ function importData(file, onSuccess) {
                      : { critical: 0, inProgress: 0, resolved: 0 }
              }));
 
-             window.showDeleteConfirmation(
-                 null,
-                 `dane z pliku "${file.name}" (zastąpi aktualne dane)`,
-                 () => {
-                     properties = normalisedProperties;
-                     issues = normalisedIssues;
-                     saveProperties();
-                     saveIssues();
-                     updatePropertyIssueCounts();
-                     updateStats();
-                     renderProperties();
-                     renderIssuesList();
-                     if (typeof onSuccess === 'function') onSuccess();
-                 },
-                 'import'
-             );
+              window.showDeleteConfirmation(
+                  null,
+                  `dane z pliku "${file.name}" (zastąpi aktualne dane)`,
+                  async () => {
+                      try {
+                          // Delete all existing properties from Supabase
+                          for (const prop of properties) {
+                              await deletePropertyFromSupabase(prop.id);
+                          }
+                          
+                          // Delete all existing issues from Supabase
+                          for (const issue of issues) {
+                              await deleteIssueFromSupabase(issue.id);
+                          }
+                      } catch (err) {
+                          console.warn('Error clearing Supabase during import:', err);
+                      }
+                      
+                      // Now add the imported properties and issues to Supabase
+                      try {
+                          for (const prop of normalisedProperties) {
+                              await addPropertyToSupabase(prop.name, prop.address, prop.floorplanPhoto || null);
+                          }
+                          
+                          for (const iss of normalisedIssues) {
+                              const status = iss.status || 'inProgress';
+                              await addIssueToSupabase(iss.propertyId, iss.name, iss.location, iss.description || '', status, iss.photos || [], iss.pinPosition || null);
+                          }
+                      } catch (err) {
+                          console.warn('Error syncing imported data to Supabase:', err);
+                      }
+                      
+                      properties = normalisedProperties;
+                      issues = normalisedIssues;
+                      saveProperties();
+                      saveIssues();
+                      updatePropertyIssueCounts();
+                      updateStats();
+                      renderProperties();
+                      renderIssuesList();
+                      if (typeof onSuccess === 'function') onSuccess();
+                  },
+                  'import'
+              );
 
         } catch (err) {
             alert('Błąd importu: ' + err.message);
@@ -4101,3 +4290,506 @@ async function generatePDF(selectedPropertyIds) {
             }
         }
 }
+
+// ── Mobile Header Hide on Scroll ────────────────────────────────────────────
+(function() {
+    // Only enable on mobile (viewport width <= 768px)
+    if (window.innerWidth > 768) return;
+
+    const header = document.querySelector('.dashboard-header');
+    if (!header) return;
+
+    let lastScrollY = 0;
+    let scrollDirection = 'up';
+    let scrollTimeout;
+
+    window.addEventListener('scroll', () => {
+        const currentScrollY = window.scrollY;
+
+        // Determine scroll direction
+        if (currentScrollY > lastScrollY) {
+            scrollDirection = 'down';
+        } else {
+            scrollDirection = 'up';
+        }
+
+        // Update header visibility
+        if (scrollDirection === 'down' && currentScrollY > 50) {
+            header.classList.add('hide-header');
+        } else {
+            header.classList.remove('hide-header');
+        }
+
+        lastScrollY = currentScrollY;
+    }, { passive: true });
+})();
+
+// ── Rubber Band Scrolling Effect (iOS-style) ────────────────────────────────
+(function() {
+    // Only enable on mobile (viewport width <= 768px)
+    if (window.innerWidth > 768) return;
+
+    const mainContent = document.querySelector('.main-content');
+    const header = document.querySelector('.dashboard-header');
+    const bottomNav = document.querySelector('.bottom-nav');
+    const fabContainer = document.querySelector('.fab-container');
+    if (!mainContent) return;
+
+    // Create shadow elements
+    const shadowTop = document.createElement('div');
+    shadowTop.className = 'overshoot-shadow-top';
+    document.body.appendChild(shadowTop);
+
+    const shadowBottom = document.createElement('div');
+    shadowBottom.className = 'overshoot-shadow-bottom';
+    document.body.appendChild(shadowBottom);
+
+    // Position shadow below header dynamically
+    function positionShadows() {
+        if (header) {
+            const headerHeight = header.offsetHeight;
+            shadowTop.style.top = `${headerHeight}px`;
+        }
+        if (bottomNav) {
+            const bottomNavHeight = bottomNav.offsetHeight;
+            shadowBottom.style.bottom = `${bottomNavHeight}px`;
+        }
+    }
+
+    // Position shadows initially and on resize
+    positionShadows();
+    window.addEventListener('resize', positionShadows, { passive: true });
+
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let lastTouchY = 0;
+    let velocity = 0;
+    let lastTouchTime = 0;
+    let isScrolling = false;
+    let overshootDistance = 0;
+    let maxOvershoot = 80; // Max pixels to stretch
+    let friction = 0.92; // Friction for momentum
+    let springConstant = 0.08; // Spring strength
+    let isAnimating = false;
+
+    // Check if element is scrollable
+    function isElementScrollable(element) {
+        return element.scrollHeight > element.clientHeight;
+    }
+
+    // Check if at top of scroll
+    function isAtScrollTop() {
+        return window.scrollY === 0;
+    }
+
+    // Check if at bottom of scroll
+    function isAtScrollBottom() {
+        const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+        return Math.abs(window.scrollY - scrollableHeight) < 1;
+    }
+
+    // Update shadow visibility and scale
+    function updateShadows() {
+        const overshoot = Math.abs(overshootDistance);
+        const shadowScale = Math.min(overshoot / maxOvershoot, 1);
+
+        if (overshootDistance > 0) {
+            // Top overshoot
+            shadowTop.classList.add('active');
+            shadowBottom.classList.remove('active');
+            shadowTop.style.transform = `scaleY(${shadowScale})`;
+        } else if (overshootDistance < 0) {
+            // Bottom overshoot
+            shadowBottom.classList.add('active');
+            shadowTop.classList.remove('active');
+            shadowBottom.style.transform = `scaleY(${shadowScale})`;
+        } else {
+            // No overshoot
+            shadowTop.classList.remove('active');
+            shadowBottom.classList.remove('active');
+        }
+    }
+
+    // Apply rubber band effect only to main content (not header/footer)
+    function applyRubberBand() {
+        // Apply ease-out deceleration
+        const easeOutDistance = overshootDistance * Math.exp(-Math.abs(overshootDistance) / maxOvershoot);
+        mainContent.style.transform = `translateY(${easeOutDistance}px)`;
+        
+        // Apply counter-transforms to keep header fixed to viewport
+        // NOTE: bottom-nav and fab-container stay without transforms (to prevent overscroll issues)
+        // If parent transform changes, position:fixed children will be affected on some browsers
+        if (header) header.style.transform = `translateY(${-easeOutDistance}px)`;
+        // fabContainer: do NOT apply transform - it contains position:fixed elements which would be affected
+        // bottom-nav: do NOT apply transform - it stays fixed to viewport
+        
+        if (overshootDistance !== 0) {
+            mainContent.classList.add('stretching');
+        } else {
+            mainContent.classList.remove('stretching');
+        }
+    }
+
+    // Reset all fixed elements after rubber band animation completes
+    function resetRubberBandElements() {
+        mainContent.style.transform = 'translateY(0)';
+        if (header) {
+            header.style.transform = 'translateY(0)';
+            header.classList.remove('rubber-band-active');
+        }
+        if (bottomNav) {
+            // bottom-nav: ensure it stays fixed without transforms
+            bottomNav.style.transform = '';
+            bottomNav.classList.remove('rubber-band-active');
+        }
+        if (fabContainer) {
+            // fabContainer: no transforms (contains fixed elements)
+            fabContainer.style.transform = '';
+            fabContainer.classList.remove('rubber-band-active');
+        }
+        mainContent.classList.remove('stretching');
+    }
+
+    // Animate back to original position
+    function animateBack() {
+        if (isAnimating || overshootDistance === 0) return;
+
+        isAnimating = true;
+        const startDistance = overshootDistance;
+        const startTime = performance.now();
+        const duration = 400; // ms
+
+        function animate(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Cubic bezier easing: cubic-bezier(0.34, 1.56, 0.64, 1)
+            const easeProgress = progress < 0.5
+                ? 4 * progress * progress * progress
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+            // Bounce easing
+            let t = progress;
+            if (t < 0.5) {
+                overshootDistance = startDistance * (1 - 8 * t * t * t * t * t);
+            } else {
+                t = 1 - t;
+                overshootDistance = startDistance * (8 * t * t * t * t * t);
+            }
+
+            applyRubberBand();
+            updateShadows();
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                overshootDistance = 0;
+                applyRubberBand();
+                updateShadows();
+                isAnimating = false;
+                resetRubberBandElements();
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    // Touch start
+    document.addEventListener('touchstart', (e) => {
+        if (isAnimating) return;
+
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+        lastTouchY = touchStartY;
+        lastTouchTime = performance.now();
+        isScrolling = false;
+
+        // Pre-emptively disable transitions on fixed elements
+        // This prevents lag when starting rubber band effect
+        if (header) header.classList.add('rubber-band-active');
+        if (bottomNav) bottomNav.classList.add('rubber-band-active');
+        if (fabContainer) fabContainer.classList.add('rubber-band-active');
+    }, { passive: true });
+
+    // Touch move
+    document.addEventListener('touchmove', (e) => {
+        if (isAnimating) return;
+
+        const currentY = e.touches[0].clientY;
+        const currentX = e.touches[0].clientX;
+        const deltaY = currentY - lastTouchY;
+        const deltaX = currentX - touchStartX;
+
+        // Determine if it's vertical or horizontal scroll
+        if (!isScrolling) {
+            isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
+        }
+
+        if (!isScrolling) return;
+
+        const currentTime = performance.now();
+        const deltaTime = currentTime - lastTouchTime;
+        velocity = deltaY / deltaTime;
+
+        // Check if we can apply rubber band
+        const atTop = isAtScrollTop();
+        const atBottom = isAtScrollBottom();
+
+        if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+            // Apply rubber band resistance
+            const dragDistance = currentY - touchStartY;
+            overshootDistance = dragDistance * 0.3; // Reduce drag by 70%
+
+            // Clamp to max overshoot
+            if (Math.abs(overshootDistance) > maxOvershoot) {
+                overshootDistance = (overshootDistance > 0 ? 1 : -1) * maxOvershoot;
+            }
+
+            applyRubberBand();
+            updateShadows();
+
+            // Prevent default scrolling when overshooting
+            if (Math.abs(overshootDistance) > 5) {
+                e.preventDefault?.();
+            }
+        }
+
+        lastTouchY = currentY;
+        lastTouchTime = currentTime;
+    }, { passive: false });
+
+    // Touch end
+    document.addEventListener('touchend', () => {
+        isScrolling = false;
+        if (isAnimating) return;
+
+        if (Math.abs(overshootDistance) > 5) {
+            animateBack();
+        } else {
+            overshootDistance = 0;
+            resetRubberBandElements();
+            updateShadows();
+        }
+    }, { passive: true });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            // Remove rubber band effect on desktop
+            overshootDistance = 0;
+            resetRubberBandElements();
+            shadowTop.remove();
+            shadowBottom.remove();
+        }
+    });
+})();
+
+// ── Rubber Band Scrolling for Modals ────────────────────────────────────────
+(function() {
+    // Only enable on mobile (viewport width <= 768px)
+    if (window.innerWidth > 768) return;
+
+    // Setup rubber band for individual modal elements
+    const modals = document.querySelectorAll('.modal');
+    if (!modals.length) return;
+
+    // Track state for each modal
+    const modalStates = new Map();
+
+    function initializeModal(modal) {
+        const state = {
+            modal: modal,
+            touchStartY: 0,
+            touchStartX: 0,
+            lastTouchY: 0,
+            overshootDistance: 0,
+            maxOvershoot: 60,
+            isAnimating: false,
+            isScrolling: false,
+            shadowTop: null,
+            shadowBottom: null,
+        };
+
+        // Create shadow elements for this modal
+        // Top shadow: at the very top of modal content (sticky)
+        state.shadowTop = document.createElement('div');
+        state.shadowTop.className = 'overshoot-shadow-top modal-shadow-top';
+        state.shadowTop.style.position = 'sticky';
+        state.shadowTop.style.top = '0';
+        state.shadowTop.style.pointerEvents = 'none';
+        state.shadowTop.style.flexShrink = '0';
+        state.shadowTop.style.height = '80px';
+        state.shadowTop.style.zIndex = '3';
+        modal.insertBefore(state.shadowTop, modal.firstChild);
+
+        // Bottom shadow: absolutely positioned at the bottom of modal
+        // This overlays on top of content/buttons
+        state.shadowBottom = document.createElement('div');
+        state.shadowBottom.className = 'overshoot-shadow-bottom modal-shadow-bottom';
+        state.shadowBottom.style.position = 'absolute';
+        state.shadowBottom.style.bottom = '0';
+        state.shadowBottom.style.left = '0';
+        state.shadowBottom.style.right = '0';
+        state.shadowBottom.style.width = '100%';
+        state.shadowBottom.style.height = '80px';
+        state.shadowBottom.style.pointerEvents = 'none';
+        state.shadowBottom.style.zIndex = '1';
+        // Insert at the end of modal overlay (after modal itself)
+        modal.parentElement.appendChild(state.shadowBottom);
+
+        modalStates.set(modal, state);
+    }
+
+    // Initialize all modals
+    modals.forEach(initializeModal);
+
+    function isAtScrollTop(modal) {
+        return modal.scrollTop === 0;
+    }
+
+    function isAtScrollBottom(modal) {
+        return Math.abs(modal.scrollTop + modal.clientHeight - modal.scrollHeight) < 1;
+    }
+
+    function updateModalShadows(state) {
+        const overshoot = Math.abs(state.overshootDistance);
+        const shadowScale = Math.min(overshoot / state.maxOvershoot, 1);
+
+        if (state.overshootDistance > 0) {
+            state.shadowTop.classList.add('active');
+            state.shadowBottom.classList.remove('active');
+            state.shadowTop.style.transform = `scaleY(${shadowScale})`;
+        } else if (state.overshootDistance < 0) {
+            state.shadowBottom.classList.add('active');
+            state.shadowTop.classList.remove('active');
+            state.shadowBottom.style.transform = `scaleY(${shadowScale})`;
+        } else {
+            state.shadowTop.classList.remove('active');
+            state.shadowBottom.classList.remove('active');
+        }
+    }
+
+    function applyModalRubberBand(state) {
+        if (state.overshootDistance === 0) {
+            state.modal.style.transform = 'translateY(0)';
+            state.modal.classList.remove('stretching');
+            return;
+        }
+
+        const easeOutDistance = state.overshootDistance * Math.exp(-Math.abs(state.overshootDistance) / state.maxOvershoot);
+        state.modal.style.transform = `translateY(${easeOutDistance}px)`;
+        state.modal.classList.add('stretching');
+    }
+
+    function resetModalRubberBand(state) {
+        state.modal.style.transform = 'translateY(0)';
+        state.modal.classList.remove('stretching');
+        state.overshootDistance = 0;
+        updateModalShadows(state);
+    }
+
+    function animateModalBack(state) {
+        if (state.isAnimating || state.overshootDistance === 0) return;
+
+        state.isAnimating = true;
+        const startDistance = state.overshootDistance;
+        const startTime = performance.now();
+        const duration = 400;
+
+        function animate(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            let t = progress;
+            if (t < 0.5) {
+                state.overshootDistance = startDistance * (1 - 8 * t * t * t * t * t);
+            } else {
+                t = 1 - t;
+                state.overshootDistance = startDistance * (8 * t * t * t * t * t);
+            }
+
+            applyModalRubberBand(state);
+            updateModalShadows(state);
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                resetModalRubberBand(state);
+                state.isAnimating = false;
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    // Add touch listeners to each modal
+    modals.forEach(modal => {
+        const state = modalStates.get(modal);
+
+        modal.addEventListener('touchstart', (e) => {
+            if (state.isAnimating) return;
+            state.touchStartY = e.touches[0].clientY;
+            state.touchStartX = e.touches[0].clientX;
+            state.lastTouchY = state.touchStartY;
+            state.isScrolling = false;
+        }, { passive: true });
+
+        modal.addEventListener('touchmove', (e) => {
+            if (state.isAnimating) return;
+
+            const currentY = e.touches[0].clientY;
+            const currentX = e.touches[0].clientX;
+            const deltaY = currentY - state.lastTouchY;
+            const deltaX = currentX - state.touchStartX;
+
+            if (!state.isScrolling) {
+                state.isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
+            }
+
+            if (!state.isScrolling) return;
+
+            const atTop = isAtScrollTop(modal);
+            const atBottom = isAtScrollBottom(modal);
+
+            if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+                const dragDistance = currentY - state.touchStartY;
+                state.overshootDistance = dragDistance * 0.3;
+
+                if (Math.abs(state.overshootDistance) > state.maxOvershoot) {
+                    state.overshootDistance = (state.overshootDistance > 0 ? 1 : -1) * state.maxOvershoot;
+                }
+
+                applyModalRubberBand(state);
+                updateModalShadows(state);
+
+                if (Math.abs(state.overshootDistance) > 5) {
+                    e.preventDefault?.();
+                }
+            }
+
+            state.lastTouchY = currentY;
+        }, { passive: false });
+
+        modal.addEventListener('touchend', () => {
+            state.isScrolling = false;
+            if (state.isAnimating) return;
+
+            if (Math.abs(state.overshootDistance) > 5) {
+                animateModalBack(state);
+            } else {
+                resetModalRubberBand(state);
+            }
+        }, { passive: true });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            modalStates.forEach(state => {
+                state.shadowTop.remove();
+                state.shadowBottom.remove();
+            });
+            modalStates.clear();
+        }
+    });
+})();

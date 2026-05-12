@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS public.issues (
     
     -- Pin position on floorplan (JSON: {x: number, y: number})
     pin_position JSONB,
+    -- Możesz dodać to pod kolumną pin_position
+    photos JSONB DEFAULT '[]'::jsonb,
     
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -107,15 +109,30 @@ CREATE TRIGGER update_issues_updated_at
 -- ============================================================================
 
 -- Function to update property issue counters
-CREATE OR REPLACE FUNCTION public.update_property_issue_counts(prop_id BIGINT)
-RETURNS void AS $$
+CREATE OR REPLACE FUNCTION public.update_property_issue_counts()
+RETURNS trigger AS $$
+DECLARE
+    prop_id BIGINT;
 BEGIN
+    -- Ustalenie property_id na podstawie typu operacji
+    IF TG_OP = 'DELETE' THEN
+        prop_id := OLD.property_id;
+    ELSE
+        prop_id := NEW.property_id;
+    END IF;
+
     UPDATE public.properties
     SET 
         issues_critical = (SELECT COUNT(*) FROM public.issues WHERE property_id = prop_id AND status = 'critical'),
         issues_in_progress = (SELECT COUNT(*) FROM public.issues WHERE property_id = prop_id AND status = 'inProgress'),
         issues_resolved = (SELECT COUNT(*) FROM public.issues WHERE property_id = prop_id AND status = 'resolved')
     WHERE id = prop_id;
+
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -123,20 +140,20 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_property_counts_on_issue_insert
     AFTER INSERT ON public.issues
     FOR EACH ROW
-    EXECUTE FUNCTION public.update_property_issue_counts(NEW.property_id);
+    EXECUTE FUNCTION public.update_property_issue_counts();
 
 -- Trigger: Update property counts on UPDATE
 CREATE TRIGGER update_property_counts_on_issue_update
     AFTER UPDATE ON public.issues
     FOR EACH ROW
     WHEN (OLD.status IS DISTINCT FROM NEW.status)
-    EXECUTE FUNCTION public.update_property_issue_counts(NEW.property_id);
+    EXECUTE FUNCTION public.update_property_issue_counts();
 
 -- Trigger: Update property counts on DELETE
 CREATE TRIGGER update_property_counts_on_issue_delete
     AFTER DELETE ON public.issues
     FOR EACH ROW
-    EXECUTE FUNCTION public.update_property_issue_counts(OLD.property_id);
+    EXECUTE FUNCTION public.update_property_issue_counts();
 
 -- ============================================================================
 -- 7. Comments (documentation)
