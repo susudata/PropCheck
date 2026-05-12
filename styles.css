@@ -891,6 +891,12 @@ p {
     color: var(--color-text-secondary);
 }
 
+.section-description {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    margin-top: var(--space-sm);
+}
+
 /* Features Section */
 .features {
     padding: var(--space-4xl) 0;

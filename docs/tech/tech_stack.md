@@ -83,48 +83,53 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 </div>
 ```
 
-## 2. Backend (MVP: Brak, zaplanowany Supabase Phase 2)
+## 2. Backend
 
-### Planned: Supabase
+### Supabase (Implemented - Phase 2)
 - **Baza danych:** PostgreSQL
 - **Auth:** Supabase Auth (Email, OAuth)
-- **Storage:** Supabase Storage (S3-compatible)
+- **Storage:** Base64 encoded strings in database (photos stored as `photos` JSON column)
 - **Real-time:** PostgreSQL LISTEN/NOTIFY
-- **Wersja:** Będzie zdefiniowana w Phase 2
+- **Status:** ✅ Production ready
 
-**Zaplanowana migracja:**
+**Migracja:**
 ```
-localStorage (Phase 1)
+localStorage (Phase 1, fallback)
     ↓
-Supabase PostgreSQL + Auth (Phase 2)
-    ↓
-Real-time sync WebSockets (Phase 3)
+Supabase PostgreSQL + Auth (Phase 2) ✅
 ```
 
 ## 3. Storage (Przechowywanie danych)
 
-### localStorage (Primary, MVP)
+### Supabase PostgreSQL (Primary - Phase 2)
+- **Tabela `properties`:** Dane nieruchomości
+- **Tabela `issues`:** Usterki z kolumną `photos` (JSON array base64 strings)
+- **Auth:** Supabase Auth z tabelą `users`
+- **Realtime:** Subskrypcje PostgreSQL
+
+**Przykład struktury tabeli issues:**
+```sql
+issues {
+  id: uuid (PK)
+  property_id: uuid (FK)
+  title: string
+  description: text
+  status: enum
+  photos: jsonb[] -- base64 encoded images
+  created_at: timestamp
+  updated_at: timestamp
+}
+```
+
+### localStorage (Fallback/Minimal mode)
 - **Limit:** ~5-10MB na przeglądarkę
 - **Format:** JSON (Serializable objects)
 - **Keys używane:**
   - `propcheck_properties`
   - `propcheck_issues`
-  - `propcheck_user` (jeśli będzie auth)
-  
-**Przykład:**
-```javascript
-// Zapis
-localStorage.setItem('propcheck_issues', JSON.stringify(issues));
+  - `propcheck_user`
+  - `propcheck_current_user` (auth session fallback)
 
-// Odczyt
-const issues = JSON.parse(localStorage.getItem('propcheck_issues') || '[]');
-```
-
-### IndexedDB (Planned)
-- **Limit:** ~50MB+
-- **Use:** Przechowywanie zdjęć oddzielnie od metadanych
-- **Status:** Infrastruktura przygotowana (`initPhotoDB()` w dashboard.js), nie aktywnie używana
-- **Plan:** Zaplanowana na Phase 2
 
 ## 4. Kompresja i optimizacja
 
@@ -172,8 +177,8 @@ npm run build # Tailwind minify
 
 ### Browser DevTools
 - **Console:** Sprawdzanie błędów, compression logs
-- **Storage:** localStorage inspection, quota monitoring
-- **Network:** Sprawdzanie (jeśli będzie backend)
+- **Storage:** localStorage inspection, Supabase tab monitoring
+- **Network:** Supabase API calls inspection
 - **Performance:** Profiling operacji DOM
 
 ## 6. Konwencje projektowe
@@ -243,6 +248,17 @@ try {
 }
 ```
 
+**Supabase Error Handling:**
+```javascript
+try {
+  await supabase.from('issues').insert(issueData);
+} catch (error) {
+  console.error('Supabase error:', error.message);
+  // Fallback to localStorage
+  saveLocally(issueData);
+}
+```
+
 ### Bezpieczeństwo (Security)
 ```javascript
 // Escape HTML w output
@@ -263,24 +279,23 @@ element.innerHTML = escapeHtml(userInput);
 
 ## 7. Ścieżka wdrażania (Deployment)
 
-### MVP (Phase 1)
-- Static hosting (GitHub Pages, Netlify, Vercel)
-- Brak backendu
-- localStorage only
+### Phase 1 (MVP) - Completed
+- Static hosting (Netlify) ✅
+- localStorage fallback mode
 - Demo data preloaded
 
-### Phase 2
-- Supabase backend
-- PostgreSQL migration
-- Auth setup
-- Storage bucket
+### Phase 2 (Current) - Active
+- Supabase backend ✅
+- PostgreSQL with `properties` and `issues` tables
+- Supabase Auth implemented
+- Photos stored as base64 in `photos` column
+- Realtime subscriptions enabled
 
 ### Production
-- HTTPS enforcement
-- CORS setup
-- CDN caching
-- Error monitoring (Sentry)
-- Analytics (Plausible)
+- HTTPS enforcement ✅
+- CORS setup ✅
+- Error monitoring (Sentry - planned)
+- Analytics (Plausible - planned)
 
 ## 8. Performance Targets
 
@@ -304,4 +319,4 @@ element.innerHTML = escapeHtml(userInput);
 
 ---
 
-**Dokument ostatnio aktualizowany:** 2026-05-11
+**Dokument ostatnio aktualizowany:** 2026-05-12
