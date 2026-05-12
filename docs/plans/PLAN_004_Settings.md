@@ -49,36 +49,6 @@ Zmienne motywu będą trzymane w bloku `[data-theme="dark"]` i `[data-theme="blu
 }
 ```
 
-**Motyw niebieski (`blue`) — Biały + niebieski:**
-```css
-[data-theme="blue"] {
-  --color-primary: #2563EB;
-  --color-primary-dark: #1D4ED8;
-  --color-primary-light: #3B82F6;
-  --color-cream: #F0F4FF;
-  --color-cream-dark: #E0E9FF;
-  --color-cream-light: #FFFFFF;
-  --color-accent: #60A5FA;
-  --color-accent-light: #BFDBFE;
-  --color-text: #0F172A;
-  --color-text-secondary: #334155;
-  --color-text-muted: #64748B;
-  --color-text-light: #94A3B8;
-  --color-success: #059669;
-  --color-warning: #D97706;
-  --color-critical: #DC2626;
-  --color-bg: #FFFFFF;
-  --color-bg-alt: #F8FAFF;
-  --color-bg-card: #FFFFFF;
-  --color-border: #DBEAFE;
-  --color-border-light: #EFF6FF;
-  --shadow-sm: 0 1px 3px rgba(37, 99, 235, 0.06);
-  --shadow-md: 0 4px 12px rgba(37, 99, 235, 0.1);
-  --shadow-lg: 0 8px 30px rgba(37, 99, 235, 0.12);
-  --shadow-xl: 0 20px 50px rgba(37, 99, 235, 0.15);
-}
-```
-
 > **Uwaga:** Zmienna `[data-theme]` ustawiana jest na `<html>` i persystowana w `localStorage` pod kluczem `propcheck_theme`.
 
 ---
