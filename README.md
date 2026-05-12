@@ -58,36 +58,10 @@
 
 ---
 
-## 🚀 Quick Start
-
-### Setup
-```bash
-# Sklonuj repo
-git clone <repo-url>
-cd PropCheck
-
-# Otwórz w przeglądarce
-open index.html
-# lub
-npx http-server
-```
-
-### Build (CSS)
-```bash
-# Zainstaluj zależności
-npm install
-
-# Watch mode (development)
-npm run dev
-
-# Minify (production)
-npm run build
-```
-
 ### Try Demo
 1. Otwórz aplikację
 2. Przejdź do Settings
-3. Kliknij "Load Demo Data"
+3. Kliknij "Generuj dane demo"
 4. Eksploruj 5 nieruchomości z 15+ usterkkami
 
 ---
@@ -96,7 +70,7 @@ npm run build
 
 ```
 PropCheck/
-├── docs/                    # 📚 DOKUMENTACJA ACADEMICKA
+├── docs/                    # 📚 DOKUMENTACJA
 │   ├── architecture/        # Opis systemu, decyzje architektoniczne
 │   │   ├── system_overview.md
 │   │   ├── adr_001.md       (localStorage decision)
@@ -110,14 +84,20 @@ PropCheck/
 │   │   └── PLAN_002_Floorplan_Issues.md
 │   ├── roles/               # Definicje ról (Product Owner, Developer, etc)
 │   │   └── PRODUCT_OWNER.md
-│   ├── implemented_features.md  # Lista wszystkich features (MVP)
-│   └── implemented_plans.md     # Lista wszystkich planów
+│   ├── BUGFIX_NOTES.md              # Opis bug fixa (QuotaExceededError + compression)
+│   ├── PHOTO_UPLOAD_AUDIT.md        # Audit wszystkich ścieżek wgrywania zdjęć
+│   ├── IMPLEMENTATION_SUMMARY.md    # Podsumowanie implementacji faz
+│   ├── implemented_features.md      # Lista wszystkich features (MVP)
+│   └── implemented_plans.md         # Lista wszystkich planów
 
 ├── examples/                # 💻 KOD APLIKACJI
-│   ├── dashboard.html       # Główny HTML (dashboard, floorplan, issues page)
-│   ├── dashboard.js         # Logika biznesowa (CRUD, compression, rendering)
-│   ├── dashboard.css        # Stylowanie (responsive, design system)
-│   └── floorplans/          # Demo zdjęcia rzutów
+│   ├── dashboard.html           # Główny HTML (dashboard, floorplan, issues page)
+│   ├── dashboard.js             # Logika biznesowa (CRUD, compression, rendering)
+│   ├── dashboard.css            # Stylowanie (responsive, design system)
+│   ├── index_landing.html       # Landing page (backup w /examples/)
+│   ├── script_landing.js        # Landing page logic (backup w /examples/)
+│   ├── styles_landing.css       # Landing page styles (backup w /examples/)
+│   └── floorplans/              # Demo zdjęcia rzutów
 │       └── floorplan-*.png
 
 ├── src/
@@ -126,16 +106,14 @@ PropCheck/
 ├── dist/
 │   └── styles.css           # Compiled CSS (minified)
 
-├── index.html               # Landing page / entry point
-├── script.js                # Landing page logic
-├── styles.css               # Landing page styles
-├── tailwind.config.js        # Tailwind configuration
-├── postcss.config.js         # PostCSS configuration
-├── package.json              # Dependencies (Tailwind, PostCSS, Autoprefixer)
+├── index.html               # ⚠️ Landing page / entry point (REQUIRED na root)
+├── script.js                # ⚠️ Landing page logic (REQUIRED na root)
+├── styles.css               # ⚠️ Landing page styles (REQUIRED na root)
+├── tailwind.config.js        # Tailwind configuration (REQUIRED na root)
+├── postcss.config.js         # PostCSS configuration (REQUIRED na root)
+├── package.json              # Dependencies (REQUIRED na root)
 
 ├── README.md                 # 👈 Ten plik
-├── implemented_features.md   # (symlink to docs/)
-├── implemented_plans.md      # (symlink to docs/)
 └── AGENTS.md                 # Instrukcje dla AI Agentów
 ```
 
@@ -168,7 +146,7 @@ PropCheck/
 
 ## 📚 Dokumentacja
 
-### Dla Product Owner / Nauczyciela
+### Dla Product Owner
 → [`docs/business/business_requirements.md`](docs/business/business_requirements.md)
 - Cele produktu
 - User stories
@@ -208,6 +186,11 @@ PropCheck/
 - Status każdego planu
 - KPIs i metrics
 
+### Technical Deep-Dives
+→ [`docs/BUGFIX_NOTES.md`](docs/BUGFIX_NOTES.md) — Opis rozwiązania QuotaExceededError
+→ [`docs/PHOTO_UPLOAD_AUDIT.md`](docs/PHOTO_UPLOAD_AUDIT.md) — Audit ścieżek wgrywania zdjęć
+→ [`docs/IMPLEMENTATION_SUMMARY.md`](docs/IMPLEMENTATION_SUMMARY.md) — Podsumowanie implementacji
+
 ---
 
 ## 📊 Plan wdrażania
@@ -239,17 +222,6 @@ PropCheck/
 - [ ] PDF export
 - [ ] Email notifications
 - [ ] User management
-
-### Phase 3 (Team Collaboration) — 🔮 PLANNED
-- [ ] Multiple users per account
-- [ ] Role-based access
-- [ ] Issue assignment
-- [ ] Comments/notes
-
-### Phase 4 (Mobile) — 🔮 PLANNED
-- [ ] React Native app (iOS/Android)
-- [ ] Offline-first sync
-- [ ] Push notifications
 
 ---
 
@@ -299,20 +271,6 @@ propcheck_issues: ~50-500KB (w zależności od zdjęć)
 
 ---
 
-## 📞 Support
-
-### Dla nauczyciela/recenzenta
-- Zob. [`AGENTS.md`](AGENTS.md) — instrukcje dla AI agentów
-- Zob. [`docs/`](docs/) — pełna dokumentacja academicka
-
-### Dla użytkownika
-1. Otwórz aplikację
-2. Kliknij Settings → Load Demo Data
-3. Eksploruj features
-4. Spróbuj dodać własną nieruchomość
-
----
-
 ## 📝 License
 
 Student Project (2026)
@@ -326,9 +284,3 @@ Wszystkie pliki dokumentacji są dostępne dla celów edukacyjnych.
 - **Architektura:** localStorage + Vanilla JS
 - **Compression:** Canvas API
 - **Design system:** Custom CSS + Tailwind tokens
-
----
-
-**Ostatnia aktualizacja:** 2026-05-11  
-**Status:** Phase 1 (MVP) Complete, Ready for Production Review  
-**Recenzja:** Pending (awaiting Product Owner sign-off)

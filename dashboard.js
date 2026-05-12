@@ -2,6 +2,83 @@
  * PropCheck Dashboard - Interactive Features
  */
 
+// ── Auth Guard ──────────────────────────────────────────────────────────────
+// Check if user is authenticated, redirect to login if not
+(async () => {
+    const user = await getCurrentUser();
+    if (!user) {
+        // Not logged in, redirect to login page
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // User is authenticated, display user info
+    displayUserInfo(user);
+})();
+
+function displayUserInfo(user) {
+    const email = user.email || 'Użytkownik';
+    const initials = getInitials(email);
+    
+    // Update sidebar
+    const sidebarInitials = document.getElementById('sidebarUserInitials');
+    const sidebarEmail = document.getElementById('sidebarUserEmail');
+    if (sidebarInitials) sidebarInitials.textContent = initials;
+    if (sidebarEmail) sidebarEmail.textContent = email;
+    
+    // Update header user menu
+    const userInitials = document.getElementById('userInitials');
+    const userInitialsDropdown = document.getElementById('userInitialsDropdown');
+    const userEmail = document.getElementById('userEmail');
+    if (userInitials) userInitials.textContent = initials;
+    if (userInitialsDropdown) userInitialsDropdown.textContent = initials;
+    if (userEmail) userEmail.textContent = email;
+}
+
+function getInitials(email) {
+    if (!email) return '?';
+    const parts = email.split('@')[0].split('.');
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+}
+
+// ── User Menu Toggle ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const userMenuTrigger = document.getElementById('userMenuTrigger');
+    const userMenuDropdown = document.getElementById('userMenuDropdown');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (userMenuTrigger && userMenuDropdown) {
+        userMenuTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userMenuDropdown.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            userMenuDropdown.classList.remove('show');
+        });
+        
+        userMenuDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    }
+    
+    // Logout handler
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            const result = await signOut();
+            if (result.success) {
+                window.location.href = 'login.html';
+            } else {
+                alert('Błąd podczas wylogowania: ' + result.error);
+            }
+        });
+    }
+});
+
 let properties = [];
 let issues = [];
 let itemToDelete = null;
@@ -245,15 +322,32 @@ document.addEventListener('DOMContentLoaded', async function() {
          console.warn('IndexedDB not available, will use localStorage with compression');
      }
      
-     initAddPropertyModal();
-     initAddIssueModal();
-     initPropertyIssuesModal();
-     initDeleteModal();
-     initReportModal();
-     initFloorplanMapModal();
-     initSettingsModal();
-     loadProperties();
-     loadIssues();
+      initAddPropertyModal();
+      initAddIssueModal();
+      initPropertyIssuesModal();
+      initDeleteModal();
+      initReportModal();
+      initFloorplanMapModal();
+      initSettingsModal();
+      
+      // Initialize Supabase sync for properties
+      await initPropertiesSync();
+      
+      // Sync cache to global properties array (for offline-first)
+      if (window.propertiesCache && window.propertiesCache.length > 0) {
+          properties = window.propertiesCache;
+      }
+      
+      // Initialize Supabase sync for issues
+      await initIssuesSync();
+      
+      // Sync cache to global issues array (for offline-first)
+      if (window.issuesCache && window.issuesCache.length > 0) {
+          issues = window.issuesCache;
+      }
+      
+      await loadProperties();
+      loadIssues();
     
     // Mobile menu initialization (simplified, inline)
     const menuBtn = document.getElementById('mobileMenuBtn');
@@ -1001,37 +1095,86 @@ function initImageViewerModal() {
     });
 }
 
-function addProperty(name, address, floorplanPhoto) {
-    const property = {
-        id: Date.now(),
-        name: name,
-        address: address,
-        floorplanPhoto: floorplanPhoto || null,
-        issues: { critical: 0, inProgress: 0, resolved: 0 }
-    };
+async function addProperty(name, address, floorplanPhoto) {
+    // Try Supabase first
+    const result = await addPropertyToSupabase(name, address, floorplanPhoto);
     
-    properties.push(property);
-    saveProperties();
-    renderProperties();
-    updateStats();
+    if (result.success) {
+        // Supabase sync successful
+        properties = window.propertiesCache || [];  // Update from global cache
+        saveProperties();  // Also save to localStorage (backup)
+        renderProperties();
+        updateStats();
+        console.log('Property added to Supabase:', result.data);
+        return result.data;
+    } else {
+        // Fallback to localStorage only (offline mode)
+        console.warn('Supabase add failed, using localStorage fallback:', result.error);
+        const property = {
+            id: Date.now(),
+            name: name,
+            address: address,
+            floorplanPhoto: floorplanPhoto || null,
+            issues: { critical: 0, inProgress: 0, resolved: 0 }
+        };
+        
+        properties.push(property);
+        savePropertiesToCache(properties);  // Ensure cache is updated
+        saveProperties();  // Also save to old localStorage key (backward compat)
+        renderProperties();
+        updateStats();
+        return property;
+    }
 }
 
-function deleteProperty(id) {
-    properties = properties.filter(p => p.id !== id);
-    saveProperties();
-    renderProperties();
-    updateStats();
+async function deleteProperty(id) {
+    // Try Supabase first
+    const result = await deletePropertyFromSupabase(id);
+    
+    if (result.success) {
+        // Supabase sync successful
+        properties = window.propertiesCache || [];  // Update from global cache
+        saveProperties();  // Also save to localStorage (backup)
+        renderProperties();
+        updateStats();
+        console.log('Property deleted from Supabase');
+    } else {
+        // Fallback to localStorage only (offline mode)
+        console.warn('Supabase delete failed, using localStorage fallback:', result.error);
+        properties = properties.filter(p => p.id !== id);
+        savePropertiesToCache(properties);  // Ensure cache is updated
+        saveProperties();  // Also save to old localStorage key (backward compat)
+        renderProperties();
+        updateStats();
+    }
 }
 
 function saveProperties() {
     localStorage.setItem('propcheck_properties', JSON.stringify(properties));
+    // Also update cache for sync module (offline-first)
+    if (window.savePropertiesToCache) {
+        window.savePropertiesToCache(properties);
+    }
 }
 
-function loadProperties() {
-    const saved = localStorage.getItem('propcheck_properties');
-    if (saved) {
-        properties = JSON.parse(saved);
+async function loadProperties() {
+    // Try to fetch from Supabase first
+    const supabaseProperties = await fetchPropertiesFromSupabase();
+    
+    if (supabaseProperties.length > 0) {
+        // Supabase sync successful
+        properties = supabaseProperties;
+        // Update both localStorage keys (for offline fallback)
+        saveProperties();  // Saves to propcheck_properties
+        if (window.savePropertiesToCache) {
+            window.savePropertiesToCache(properties);  // Saves to propcheck_properties_cache
+        }
+    } else {
+        // Fallback to localStorage cache (for offline mode)
+        const cached = window.loadPropertiesFromCache && window.loadPropertiesFromCache();
+        properties = cached || [];
     }
+    
     renderProperties();
     updateStats();
 }
@@ -1169,52 +1312,84 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function addIssue(propertyId, name, location, description, isCritical = false, photos = null) {
+async function addIssue(propertyId, name, location, description, isCritical = false, photos = null) {
     const propertyIdNum = parseInt(propertyId);
+    const status = isCritical ? 'critical' : 'inProgress';
     
-    const issue = {
-        id: Date.now(),
-        propertyId: propertyIdNum,
-        name: name,
-        location: location,
-        description: description,
-        status: isCritical ? 'critical' : 'inProgress',
-        createdAt: new Date().toISOString(),
-        photos: photos || [],
-        pinPosition: null
-    };
+    // Try Supabase first
+    const result = await addIssueToSupabase(propertyIdNum, name, location, description, status, photos, null);
     
-    issues.push(issue);
-    saveIssues();
-    updatePropertyIssueCounts();
-    updateStats();
-    renderIssuesList();
-    return issue.id; // return id for pin-after-save flow
+    if (result.success) {
+        // Supabase sync successful
+        issues = window.issuesCache || [];
+        saveIssues();
+        updatePropertyIssueCounts();
+        updateStats();
+        renderIssuesList();
+        return result.data.id;
+    } else {
+        // Fallback to localStorage only (offline mode)
+        console.warn('Supabase add failed, using localStorage fallback:', result.error);
+        const issue = {
+            id: Date.now(),
+            propertyId: propertyIdNum,
+            name: name,
+            location: location,
+            description: description,
+            status: status,
+            createdAt: new Date().toISOString(),
+            photos: photos || [],
+            pinPosition: null
+        };
+        
+        issues.push(issue);
+        saveIssuesToCache(issues);
+        saveIssues();
+        updatePropertyIssueCounts();
+        updateStats();
+        renderIssuesList();
+        return issue.id;
+    }
 }
 
 /** Add issue with a pre-set pin position (from clicking map before filling form) */
-function addIssueWithPin(propertyId, name, location, description, isCritical, photos, pinPosition) {
+async function addIssueWithPin(propertyId, name, location, description, isCritical, photos, pinPosition) {
     const propertyIdNum = parseInt(propertyId);
-    const issue = {
-        id: Date.now(),
-        propertyId: propertyIdNum,
-        name: name,
-        location: location,
-        description: description,
-        status: isCritical ? 'critical' : 'inProgress',
-        createdAt: new Date().toISOString(),
-        photos: photos || [],
-        pinPosition: {
-            x: Math.max(1, Math.min(99, pinPosition.x)),
-            y: Math.max(1, Math.min(99, pinPosition.y))
-        }
+    const status = isCritical ? 'critical' : 'inProgress';
+    const pin = {
+        x: Math.max(1, Math.min(99, pinPosition.x)),
+        y: Math.max(1, Math.min(99, pinPosition.y))
     };
-    issues.push(issue);
-    saveIssues();
-    updatePropertyIssueCounts();
-    updateStats();
-    renderIssuesList();
-    return issue.id;
+
+    // Try Supabase first
+    const result = await addIssueToSupabase(propertyIdNum, name, location, description, status, photos, pin);
+
+    if (result.success) {
+        issues = window.issuesCache || [];
+        saveIssues();
+        updatePropertyIssueCounts();
+        updateStats();
+        renderIssuesList();
+        return result.data.id;
+    } else {
+        // Offline fallback
+        console.warn('Supabase addIssueWithPin failed, using localStorage fallback:', result.error);
+        const issue = {
+            id: Date.now(),
+            propertyId: propertyIdNum,
+            name, location, description, status,
+            createdAt: new Date().toISOString(),
+            photos: photos || [],
+            pinPosition: pin
+        };
+        issues.push(issue);
+        if (window.saveIssuesToCache) window.saveIssuesToCache(issues);
+        saveIssues();
+        updatePropertyIssueCounts();
+        updateStats();
+        renderIssuesList();
+        return issue.id;
+    }
 }
 
 /** Show/hide "Gotowe + Umieść" button based on whether property has a floorplan */
@@ -1233,6 +1408,12 @@ function saveIssues() {
          const sizeInMB = (new Blob([json]).size / (1024 * 1024)).toFixed(2);
          console.log(`Saving issues (${sizeInMB}MB) to localStorage...`);
          localStorage.setItem('propcheck_issues', json);
+         
+         // Also update cache for sync module
+         if (window.saveIssuesToCache) {
+             window.saveIssuesToCache(issues);
+         }
+         
          console.log('Issues saved successfully');
      } catch (e) {
          if (e.name === 'QuotaExceededError') {
@@ -1258,22 +1439,38 @@ function saveIssues() {
      }
 }
 
-function loadIssues() {
-    const saved = localStorage.getItem('propcheck_issues');
-    if (saved) {
-        issues = JSON.parse(saved);
-        // Backward compatibility: convert old single photo to photos array
-        issues = issues.map(issue => {
-            if (issue.photo && (!issue.photos || !Array.isArray(issue.photos))) {
-                return {
-                    ...issue,
-                    photos: issue.photo ? [issue.photo] : [],
-                    photo: undefined // Remove old field
-                };
+async function loadIssues() {
+    // Try to fetch from Supabase first
+    const supabaseIssues = await fetchIssuesFromSupabase();
+    
+    if (supabaseIssues.length > 0) {
+        // Supabase sync successful
+        issues = supabaseIssues;
+        // Update both localStorage keys (for offline fallback)
+        saveIssues();
+        if (window.saveIssuesToCache) {
+            window.saveIssuesToCache(issues);
+        }
+    } else {
+        // Fallback to localStorage cache
+        const cached = window.loadIssuesFromCache && window.loadIssuesFromCache();
+        issues = cached || [];
+        
+        // If still empty, try old localStorage
+        if (issues.length === 0) {
+            const saved = localStorage.getItem('propcheck_issues');
+            if (saved) {
+                issues = JSON.parse(saved);
+                // Backward compatibility: convert old single photo to photos array
+                issues = issues.map(issue => {
+                    if (issue.photo && (!issue.photos || !Array.isArray(issue.photos))) {
+                        return { ...issue, photos: [issue.photo], photo: undefined };
+                    }
+                    return issue;
+                });
             }
-            return issue;
-        });
-    }
+        }
+    }       // ← ten nawias był wcześniej brakujący
     renderIssuesList();
 }
 
@@ -1385,13 +1582,29 @@ function renderIssuesList() {
     });
 }
 
-function deleteIssue(id) {
-    issues = issues.filter(i => i.id !== Number(id));
-    saveIssues();
-    updatePropertyIssueCounts();
-    updateStats();
-    renderIssuesList();
-    renderProperties();
+async function deleteIssue(id) {
+    // Try Supabase first
+    const result = await deleteIssueFromSupabase(id);
+    
+    if (result.success) {
+        // Supabase sync successful
+        issues = window.issuesCache || [];
+        saveIssues();
+        updatePropertyIssueCounts();
+        updateStats();
+        renderIssuesList();
+        renderProperties();
+    } else {
+        // Fallback to localStorage only (offline mode)
+        console.warn('Supabase delete failed, using localStorage fallback:', result.error);
+        issues = issues.filter(i => i.id !== Number(id));
+        saveIssuesToCache(issues);
+        saveIssues();
+        updatePropertyIssueCounts();
+        updateStats();
+        renderIssuesList();
+        renderProperties();
+    }
 }
 
 function formatDate(isoString) {
@@ -1644,49 +1857,78 @@ function updateIssue(issueId, name, location, description, isCritical, photos) {
  * Update issue while preserving "resolved" status if it was set via toggle button.
  * Only recalculate status to 'critical' or 'inProgress' if currently not 'resolved'.
  */
-function updateIssueEdit(issueId, name, location, description, isCritical, photos) {
-     const index = issues.findIndex(i => i.id === issueId);
-     if (index === -1) return;
-     
-     const currentIssue = issues[index];
-     // Preserve 'resolved' status; otherwise update based on isCritical flag
-     const newStatus = currentIssue.status === 'resolved' 
-         ? 'resolved' 
-         : (isCritical ? 'critical' : 'inProgress');
-     
-     issues[index] = {
-         ...issues[index],
-         name: name,
-         location: location,
-         description: description,
-         status: newStatus,
-         photos: photos || [],
-         updatedAt: new Date().toISOString()
-     };
-     
-     saveIssues();
-     updatePropertyIssueCounts();
-     updateStats();
-     renderIssuesList();
-     renderProperties();
+async function updateIssueEdit(issueId, name, location, description, isCritical, photos) {
+    const index = issues.findIndex(i => i.id === issueId);
+    if (index === -1) return;
+
+    const currentIssue = issues[index];
+    const newStatus = currentIssue.status === 'resolved'
+        ? 'resolved'
+        : (isCritical ? 'critical' : 'inProgress');
+
+    // Try Supabase first
+    const result = await updateIssueInSupabase(issueId, name, location, description, newStatus, currentIssue.pinPosition || null);
+
+    if (result.success) {
+        // Supabase sync successful — rebuild issues from cache, but preserve local photos
+        issues = (window.issuesCache || []).map(i => {
+            if (i.id === issueId) {
+                return { ...i, photos: photos || [] };
+            }
+            return i;
+        });
+    } else {
+        // Offline fallback
+        console.warn('Supabase updateIssueEdit failed, using localStorage fallback:', result.error);
+        issues[index] = {
+            ...issues[index],
+            name, location, description,
+            status: newStatus,
+            photos: photos || [],
+            updatedAt: new Date().toISOString()
+        };
+        if (window.saveIssuesToCache) window.saveIssuesToCache(issues);
+    }
+
+    saveIssues();
+    updatePropertyIssueCounts();
+    updateStats();
+    renderIssuesList();
+    renderProperties();
 }
 
 /** Update issue status (resolved/unresolved) */
-function updateIssueStatus(issueId, newStatus) {
-     const index = issues.findIndex(i => i.id === issueId);
-     if (index === -1) return;
+async function updateIssueStatus(issueId, newStatus) {
+     // Try Supabase first
+     const result = await updateIssueStatusInSupabase(issueId, newStatus);
      
-     issues[index] = {
-         ...issues[index],
-         status: newStatus,
-         updatedAt: new Date().toISOString()
-     };
-     
-     saveIssues();
-     updatePropertyIssueCounts();
-     updateStats();
-     renderIssuesList();
-     renderProperties();
+     if (result.success) {
+         // Supabase sync successful
+         issues = window.issuesCache || [];
+         saveIssues();
+         updatePropertyIssueCounts();
+         updateStats();
+         renderIssuesList();
+         renderProperties();
+     } else {
+         // Fallback to localStorage only (offline mode)
+         console.warn('Supabase update failed, using localStorage fallback:', result.error);
+         const index = issues.findIndex(i => i.id === issueId);
+         if (index === -1) return;
+         
+         issues[index] = {
+             ...issues[index],
+             status: newStatus,
+             updatedAt: new Date().toISOString()
+         };
+         
+         saveIssuesToCache(issues);
+         saveIssues();
+         updatePropertyIssueCounts();
+         updateStats();
+         renderIssuesList();
+         renderProperties();
+     }
 }
 
 // ─── Floorplan Map ────────────────────────────────────────────────────────────
@@ -2862,14 +3104,14 @@ async function populateDemoData() {
      properties = [];
      issues = [];
 
-     // PNG floorplan paths (relative to dashboard.html location)
-     const floorplanPaths = [
-         'floorplans/floorplan-1.png',
-         'floorplans/floorplan-2.png',
-         'floorplans/floorplan-3.png',
-         'floorplans/floorplan-4.png',
-         'floorplans/floorplan-5.png'
-     ];
+      // PNG floorplan paths (relative to project root)
+      const floorplanPaths = [
+          'examples/floorplans/floorplan-1.png',
+          'examples/floorplans/floorplan-2.png',
+          'examples/floorplans/floorplan-3.png',
+          'examples/floorplans/floorplan-4.png',
+          'examples/floorplans/floorplan-5.png'
+      ];
 
      console.log('[Demo] Converting floorplan images to data URIs...');
      

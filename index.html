@@ -20,10 +20,16 @@
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="#" aria-label="PropCheck home">
-        <span class="brand-mark">PC</span>
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="#8B7355"/>
+          <path d="M8 12L16 8L24 12V20L16 24L8 20V12Z" stroke="#FFFAF0" stroke-width="1.5" fill="none"/>
+          <circle cx="16" cy="16" r="2" fill="#FFFAF0"/>
+          <circle cx="12" cy="14" r="1.5" fill="#FFFAF0"/>
+          <circle cx="20" cy="18" r="1.5" fill="#FFFAF0"/>
+        </svg>
         <span class="brand-name">PropCheck</span>
       </a>
-      <button id="demoAction" class="btn btn-primary" type="button">Dodaj pierwszą usterkę</button>
+      <a href="dashboard.html" class="btn btn-primary">Dodaj pierwszą usterkę</a>
     </div>
   </header>
 
@@ -31,33 +37,219 @@
     <section class="hero">
       <div class="container hero-grid">
         <div>
-          <p class="eyebrow">MVP • Usterki-first</p>
           <h1>Uporządkuj zgłoszenia usterek w mniej niż 5 minut</h1>
           <p class="lead">
             Jedna lista, jasne statusy i szybkie przekazanie problemów ekipie — bez chaosu w SMS i WhatsApp.
           </p>
           <div class="hero-actions">
-            <button id="startBtn" class="btn btn-primary" type="button">Rozpocznij</button>
+            <a href="dashboard.html" class="btn btn-primary">Rozpocznij</a>
             <a class="btn btn-ghost" href="#value">Jak to działa</a>
           </div>
         </div>
-
-        <aside class="card" aria-label="Podgląd wartości">
-          <h2>Pierwsza wartość</h2>
-          <ol>
-            <li>Dodajesz nieruchomość.</li>
-            <li>Tworzysz usterkę i ustawiasz status.</li>
-            <li>Masz gotowy podgląd do przekazania ekipie.</li>
-          </ol>
-        </aside>
       </div>
     </section>
 
-    <section id="value" class="value-strip">
-      <div class="container">
-        <p id="feedback" class="feedback" role="status" aria-live="polite">
-          Aplikacja gotowa. Kliknij „Rozpocznij”, aby sprawdzić podstawowy flow.
-        </p>
+    <section id="value" class="features">
+      <div class="section-container">
+        <div class="section-header">
+          <span class="section-badge">Funkcje</span>
+          <h2 class="section-title">Wszystko, czego potrzebujesz w jednym miejscu</h2>
+          <p class="section-subtitle">
+            PropCheck to prosty system do zarządzania usterkarnią — bez nadmiaru funkcji, tylko to, co naprawdę działa.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Proste zgłaszanie</h3>
+            <p class="feature-description">
+              Dodaj usterkę w kilka sekund — tytuł, priorytet, zdjęcie. Bez zbędnych formularzy.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Kontrola statusów</h3>
+            <p class="feature-description">
+              Widzisz na pierwszy rzut oka, co wymaga pilnej interwencji, co jest w trakcie, a co załatwione.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Szybka komunikacja</h3>
+            <p class="feature-description">
+              Przekaż ekipie link do konkretnej usterki — od razu widzą, gdzie i co naprawić.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Organizacja nieruchomości</h3>
+            <p class="feature-description">
+              Zarządzaj wieloma lokalami — każda nieruchomość ma własną listę usterek i rzut podłogi.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 3v4M8 3v4M2 11h20"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Historia zdarzeń</h3>
+            <p class="feature-description">
+              Wszystkie zgłoszenia archiwizowane — zawsze wrócisz do sprawdzonej naprawy lub kosztów.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <h3 class="feature-title">Dostęp z każdego miejsca</h3>
+            <p class="feature-description">
+              Działa w przeglądarce — sprawdzisz listę z biura, placu budowy lub domu.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-it-works">
+      <div class="section-container">
+        <div class="section-header">
+          <span class="section-badge">Proces</span>
+          <h2 class="section-title">Jak to działa?</h2>
+          <p class="section-subtitle">
+            Trzy proste kroki dzielą Cię od uporządkowanej usterkarni
+          </p>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h3 class="step-title">Dodaj nieruchomość</h3>
+            <p class="step-description">
+              Wprowadź adres i opcjonalnie dodaj rzut podłogi — to wszystko.
+            </p>
+          </div>
+
+          <div class="step-connector"></div>
+
+          <div class="step">
+            <div class="step-number">2</div>
+            <h3 class="step-title">Zgłoś usterki</h3>
+            <p class="step-description">
+              Opisz problem, ustal priorytet, dodaj zdjęcie. Gotowe.
+            </p>
+          </div>
+
+          <div class="step-connector"></div>
+
+          <div class="step">
+            <div class="step-number">3</div>
+            <h3 class="step-title">Zarządzaj naprawami</h3>
+            <p class="step-description">
+              Zmieniaj statusy, udostępniaj ekipie, zamykaj rozwiązane sprawy.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="section-container">
+        <div class="problem-content">
+          <span class="section-badge">Dla kogo?</span>
+          <h2 class="section-title">Przestań tracić czas na chaos</h2>
+          <p class="section-subtitle">
+            PropCheck stworzono dla landlordów i zarządców, którzy zarządzają kilkoma nieruchomościami i mają dość gubienia zgłoszeń w wiadomościach.
+          </p>
+        </div>
+
+        <div class="problem-grid">
+          <div class="problem-item">
+            <div class="problem-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <h3>Gubisz zgłoszenia?</h3>
+            <p>
+              Najemcy piszą na WhatsApp, SMS, e-mail... i nigdy nie wiesz, o czym już rozmawiałeś.
+            </p>
+          </div>
+
+          <div class="problem-item">
+            <div class="problem-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <h3>Nie wiesz, co priorytet?</h3>
+            <p>
+              Wszystkie sprawy wyglądają pilnie, ale nie masz jasnego obrazu, co wymaga natychmiastowej reakcji.
+            </p>
+          </div>
+
+          <div class="problem-item">
+            <div class="problem-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+              </svg>
+            </div>
+            <h3>Trudna koordynacja ekipy?</h3>
+            <p>
+              Ekipa remontowa pyta, gdzie interweniować, a Ty nie masz jednego miejsca z konkretnymi informacjami.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="section-container">
+        <div class="cta-content">
+          <h2 class="cta-title">Gotowy, żeby ogarnąć usterki raz na zawsze?</h2>
+          <p class="cta-description">
+            Zacznij korzystać z PropCheck za darmo — nie potrzebujesz karty kredytowej, żadnych zobowiązań.
+          </p>
+          <div class="cta-actions">
+            <a href="dashboard.html" class="btn btn-white btn-lg">Rozpocznij teraz</a>
+          </div>
+        </div>
       </div>
     </section>
   </main>
